@@ -13,7 +13,8 @@ const DOCK_MS = 900;
 /** A line icon for each page (24 × 24, stroked in the text colour), and the menu's close. */
 const ICONS: Record<NavSection | 'close', string> = {
   'chai-top': 'M4.5 11 12 4.8l7.5 6.2v8.2a.8.8 0 0 1-.8.8h-4.2v-5.6h-5v5.6H5.3a.8.8 0 0 1-.8-.8V11Z',
-  'chai-tea': 'M6.2 8.2h11.6l-.9 11.6a.8.8 0 0 1-.8.7H7.9a.8.8 0 0 1-.8-.7L6.2 8.2Zm3.3 0V7.3a2.5 2.5 0 0 1 5 0v.9',
+  'chai-tea':
+    'M6.2 8.2h11.6l-.9 11.6a.8.8 0 0 1-.8.7H7.9a.8.8 0 0 1-.8-.7L6.2 8.2Zm3.3 0V7.3a2.5 2.5 0 0 1 5 0v.9',
   'chai-about':
     'M4.8 5.6c2.6-.9 5-.7 7.2.9v12.8c-2.2-1.5-4.6-1.8-7.2-.9V5.6Zm14.4 0c-2.6-.9-5-.7-7.2.9v12.8c2.2-1.5 4.6-1.8 7.2-.9V5.6Z',
   'chai-connect': 'M5 5.8h14v9.4H10.6L6.6 18.6v-3.4H5V5.8Zm4 4.7h.01M12 10.5h.01M15 10.5h.01',
