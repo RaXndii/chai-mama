@@ -1,0 +1,1122 @@
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/noto-kufi-arabic/wght.css';
+import '@fontsource-variable/vazirmatn/wght.css';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
+import { flushSync } from 'react-dom';
+import { qualityStore } from '@/app/quality';
+import { navigate, usePage } from '@/app/router';
+import { chaimama as copy, useLocale } from '@/content';
+import { BLENDS, type BlendId } from '@/content/chaimama';
+import { LOCALES } from '@/content/types';
+import mascotUrl from '../brand/mascot.webp';
+import packLovelyUrl from '../brand/pack-lovely.webp';
+import pouchUrl from '../brand/pouch.webp';
+import teaLeavesUrl from '../brand/tea-leaves.webp';
+import { chai } from '../brand/tokens';
+import { ARRIVAL, ARRIVAL_CALM, CLOUD_VEIL } from '../entrance';
+import { pathOf, type ChaiPage } from '../routes';
+import {
+  arrivalPose,
+  LAYERS,
+  layerPlacement,
+  layersFor,
+  layerTransform,
+  pickSize,
+  PLATES,
+  POUCHES,
+  SKY,
+  skyFor,
+  SOFT,
+  timeOf,
+  type Pose,
+  type Size,
+} from './arrival';
+import About from './About';
+import ChaiNav from './ChaiNav';
+import { Arrow } from './icons';
+import { NAV_PAGE, type NavSection } from './nav';
+import Shop from './Shop';
+import { startTeaRain, type TeaRain } from './teaRain';
+import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
+import './chai.css';
+
+/**
+ * The Chai Mama website.
+ *
+ * It opens in a cloud: the mist clears onto the owner's picture and the camera glides in — the pack on the
+ * mossy rock, the tea rows, the valley in its mist, then the page's words.
+ *
+ * Two blends, one place, one shot (CM-008): Heritage Blend stands there in the clearer, earlier light;
+ * choosing The Lovely Blend lets a little of the day go by — the sun travels down toward the ranges, the clouds
+ * drift on, the mist takes the gold, the leaves move in a gust — and in the middle of it the red pack is
+ * uncovered across the yellow one from the sun's side, by a soft edge; and back again. One time-of-day value
+ * drives all of it (timeOfDay.ts), so a new choice mid-way turns it round from wherever it is.
+ *
+ * With a mouse, the far country is a touch soft with the air, and a soft window of clarity follows the
+ * pointer across it (CM-007); the pack, the rock and the words stay sharp.
+ *
+ * Three pages (CM-014): the homepage, the shop and Our Story. The shop is deeper into the same shot (CM-010):
+ * going there, the picture stays where it is while the camera moves in a little toward the rock, the hero's
+ * words go, the warm light of the chosen blend comes across the valley from the open side and the shop rises
+ * into that light — one short move, played backwards on the way home. Choosing a blend in the shop is the same
+ * one-shot change of light as in the hero, and the shop's colours follow it. Our Story, on the pack's ink, comes
+ * in by a cross-fade. Real loose tea falls on every page (CM-012).
+ */
+type Stage = 'cloud' | 'arriving' | 'home';
+
+/** Never hold the visitor in the cloud for the hero's images longer than this. */
+const IMAGE_WAIT_MS = 4000;
+/** A switch: the words fade out, then the new blend's come in (ms; quicker under reduced motion). */
+const COPY_OUT_MS = 380;
+const CALM_COPY_OUT_MS = 180;
+
+const smooth = smoothstep;
+
+/** At the shop the camera has moved in this far toward the rock (layer-depth units; the rock is at 3). */
+const SHOP_PUSH = 0.24;
+/** Where on the way to the shop (0 … 1) each of its parts starts to rise in: the tea, its ways to buy, how
+ *  many, what it comes to (in the order Shop.tsx draws them). */
+const SHOP_FROM = [0.4, 0.5, 0.58, 0.54];
+/** The move from the hero to the shop, and back (ms; a short fade under reduced motion). */
+const SHOP_IN_MS = 1250;
+const SHOP_OUT_MS = 950;
+const CALM_SHOP_MS = 420;
+/** Slow to start, slow to settle. */
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+
+/** With a mouse (and motion allowed), the far country starts soft and the pointer shows it sharp. */
+function clarityOn(): boolean {
+  return (
+    !!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches &&
+    !qualityStore.getState().reducedMotion
+  );
+}
+
+const otherBlend = (b: BlendId): BlendId => (b === 'heritage' ? 'lovely' : 'heritage');
+const packOf = (b: BlendId) => (b === 'lovely' ? packLovelyUrl : pouchUrl);
+
+/** The window of clarity's radius on screen (CSS px). */
+const CLEAR_R = 320;
+
+/** `?blend=lovely` opens on The Lovely Blend (links, review). */
+function initialBlend(): BlendId {
+  const b = new URLSearchParams(window.location.search).get('blend');
+  return b === 'lovely' ? 'lovely' : 'heritage';
+}
+
+// The opening light's plates start loading with the page's script, so the cloud opens onto a decoded picture.
+if (typeof window !== 'undefined') {
+  const size = pickSize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1);
+  const t = timeOf(initialBlend());
+  const base = clarityOn() ? SOFT : PLATES;
+  for (const src of [
+    base.far[t][size],
+    base.sky[t][size],
+    PLATES.ledge[t][size],
+    PLATES.leaves[t][size],
+    POUCHES[initialBlend()][size],
+  ])
+    new Image().src = src;
+}
+
+function useHead() {
+  useEffect(() => {
+    const prev = document.title;
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    const prevDesc = meta?.content;
+    const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const prevTheme = theme?.content;
+    document.title = copy.meta.title;
+    if (meta) meta.content = copy.meta.description;
+    if (theme) theme.content = chai.leafDeep;
+    return () => {
+      document.title = prev;
+      if (meta && prevDesc !== undefined) meta.content = prevDesc;
+      if (theme && prevTheme !== undefined) theme.content = prevTheme;
+    };
+  });
+}
+
+export default function ChaiSite() {
+  const lang = useLocale();
+  const page = usePage();
+  const pageRef = useRef(page);
+  pageRef.current = page;
+  const [stage, setStage] = useState<Stage>('cloud');
+  const mist = useRef<HTMLDivElement>(null);
+  const layerEls = useRef<(HTMLDivElement | null)[]>([]);
+  const stageEl = useRef<HTMLDivElement>(null);
+  const heroEl = useRef<HTMLElement>(null);
+  const sunEl = useRef<HTMLDivElement>(null);
+  const rootEl = useRef<HTMLDivElement>(null);
+  const clearEls = useRef<(HTMLDivElement | null)[]>([]);
+  const poseRef = useRef<Pose>({ x: 0, y: 0, z: 0 });
+  /** The pose the entrance or the pointer gives; the scroll's move toward the shop is added to it. */
+  const basePose = useRef<Pose>({ x: 0, y: 0, z: 0 });
+  /** How far the scene has come from the hero to the shop (0 … 1, eased). */
+  const shopK = useRef(0);
+  const shopEl = useRef<HTMLElement>(null);
+  const journeyEl = useRef<HTMLDivElement>(null);
+  const washEl = useRef<HTMLDivElement>(null);
+  const meltEl = useRef<HTMLDivElement>(null);
+  const copyEl = useRef<HTMLDivElement>(null);
+  const cueEl = useRef<HTMLAnchorElement>(null);
+  const rainBack = useRef<HTMLCanvasElement>(null);
+  const rainFront = useRef<HTMLCanvasElement>(null);
+  const rain = useRef<TeaRain | null>(null);
+  const [clarity] = useState(clarityOn);
+  const [size, setSize] = useState<Size>(() =>
+    pickSize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1),
+  );
+  useHead();
+
+  // The blend: `blend` is the visitor's choice (the switch shows it at once) and where the scene's time of day
+  // is heading; `shown` is the blend whose words are on the page — it follows a moment later, while the words
+  // are faded out.
+  const [blend, setBlend] = useState<BlendId>(initialBlend);
+  const [shown, setShown] = useState<BlendId>(blend);
+  /** The blend the page opened on: its plates load first and are the ones the entrance waits for. */
+  const initialBlendRef = useRef(blend);
+  const wanted = useRef<BlendId>(blend);
+  const [switching, setSwitching] = useState(false);
+  /** Once a switch has happened, the words come back without the entrance's stagger. */
+  const [switched, setSwitched] = useState(false);
+  // The other time of day's plates load once the page is at rest (or at once when the visitor asks).
+  const [bothTimes, setBothTimes] = useState(false);
+  /** Decoded and ready to be turned to (until then a choice waits for them, the current pack stays). */
+  const ready = useRef(false);
+  const waiting = useRef(false);
+  /** The packs that loaded: a pack whose image failed is never uncovered over the other, nor lost under it. */
+  const [packsOk, setPacksOk] = useState<Record<BlendId, boolean>>({ heritage: true, lovely: true });
+  const [said, setSaid] = useState('');
+  const timers = useRef<number[]>([]);
+  const copyTimer = useRef(0);
+  // The section after the tea shows the other blend; the visitor can look at either there, until the hero's
+  // blend changes again.
+  const [pick, setPick] = useState<{ under: BlendId; id: BlendId } | null>(null);
+  const featured = pick?.under === blend ? pick.id : otherBlend(blend);
+  const setFeatured = (id: BlendId) => setPick({ under: blend, id });
+
+  useEffect(() => {
+    const onResize = () =>
+      setSize(pickSize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1));
+    window.addEventListener('resize', onResize);
+    const pending = timers.current;
+    return () => {
+      window.removeEventListener('resize', onResize);
+      for (const t of pending) window.clearTimeout(t);
+      window.clearTimeout(copyTimer.current);
+    };
+  }, []);
+
+  // The layers' boxes for this screen's images (a phone held upright gets the band around the pack, CM-012).
+  const layers = layersFor(size);
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
+
+  // Place the layers for a camera pose (straight to the DOM: no React render per frame), moved on toward the
+  // rock as far as the scroll has come toward the shop.
+  const place = (pose: Pose) => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    basePose.current = { x: pose.x, y: pose.y, z: pose.z };
+    const at = { x: pose.x, y: pose.y, z: pose.z + SHOP_PUSH * shopK.current };
+    poseRef.current = at;
+    layersRef.current.forEach((l, i) => {
+      const el = layerEls.current[i];
+      if (el) el.style.transform = layerTransform(l, at, vw, vh);
+    });
+  };
+
+  /**
+   * The scene at time of day `t` (0 earlier, 1 later), straight to the DOM: each layer's later plate by its
+   * own curve (`--dusk`), the incoming pack's edge (`--reveal`), which end each rests on (`data-at`), the
+   * mist's gold and the clouds' drift, and the sun's place in the sky.
+   */
+  const applyTime = (t: number) => {
+    const sc = sceneAt(t, qualityStore.getState().reducedMotion);
+    LAYERS.forEach((l, i) => {
+      const el = layerEls.current[i];
+      if (!el) return;
+      const v =
+        l.name === 'sky' ? sc.sky : l.name === 'far' ? sc.far : l.name === 'pouch' ? sc.pack : sc.near;
+      el.style.setProperty(l.name === 'pouch' ? '--reveal' : '--dusk', v.toFixed(4));
+      // At rest on either end the plate (or pack) that is covered is not drawn at all (CM-013).
+      const end = v <= 0 ? 'day' : v >= 1 ? 'dusk' : '';
+      if ((el.dataset.at ?? '') !== end) {
+        if (end) el.dataset.at = end;
+        else delete el.dataset.at;
+      }
+    });
+    const hero = heroEl.current;
+    if (hero) {
+      hero.style.setProperty('--mist', sc.mist.toFixed(4));
+      hero.style.setProperty('--drift', sc.drift.toFixed(4));
+    }
+    // The shop's colours: Heritage Blend's gold (0) to The Lovely Blend's red (1), with the light (on the shop
+    // and the light across the picture only, so nothing else is restyled).
+    const theme = sc.far.toFixed(4);
+    shopEl.current?.style.setProperty('--theme', theme);
+    washEl.current?.style.setProperty('--theme', theme);
+    const sun = sunEl.current;
+    if (sun) {
+      const { early, late } = SKY.sun;
+      // Down a short arc toward the ranges (a little more down than across). In the sky layer's own px: a
+      // phone's sky starts into the picture (the sun is then off its band).
+      const k = sc.sun;
+      const from = layersRef.current.find((l) => l.name === 'sky')!.x;
+      const x = early.x + (late.x - early.x) * k - from;
+      const y = early.y + (late.y - early.y) * (k * k * 0.35 + k * 0.65);
+      sun.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+      sun.style.setProperty('--late', k.toFixed(4));
+    }
+  };
+  const clock = useRef<ReturnType<typeof timeline> | null>(null);
+  if (!clock.current) clock.current = timeline((t) => applyTime(t), timeOf(blend) === 'dusk' ? 1 : 0);
+  // The opening light is in place before the first frame is drawn.
+  useLayoutEffect(() => {
+    applyTime(clock.current!.t);
+    const c = clock.current!;
+    return () => c.stop();
+  }, []);
+
+  // The way in: from the cloud the page opens in, onto the picture (stopped if the page goes first).
+  useEffect(
+    () => runEntrance(false, false),
+    // Runs once, on the first render's refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  /**
+   * From the cloud to the page: `direct` opens it at rest; otherwise the mist clears as the camera glides in —
+   * calmly under reduced motion or in lite. Returns cancel.
+   */
+  function runEntrance(direct: boolean, faded: boolean) {
+    const pose: Pose = { x: 0, y: 0, z: 0 };
+    let raf = 0;
+    let done = false;
+    const setMist = (o: number) => {
+      if (mist.current) mist.current.style.opacity = String(o);
+    };
+    const home = () => {
+      done = true;
+      place({ x: 0, y: 0, z: 0 });
+      setMist(0);
+      setStage('home');
+    };
+    if (direct) {
+      home();
+      return () => {};
+    }
+    const calm = faded || qualityStore.getState().reducedMotion || qualityStore.getState().tier === 'lite';
+    setMist(1);
+    place(arrivalPose(0, calm, pose));
+    // Inside the cloud until the picture is decoded (it is normally in by now), never longer than the cap.
+    const imgs = [...(stageEl.current?.querySelectorAll<HTMLImageElement>('img[data-first]') ?? [])];
+    const decoded = Promise.all(imgs.map((el) => el.decode().catch(() => {})));
+    const capped = Promise.race([decoded, new Promise((r) => setTimeout(r, IMAGE_WAIT_MS))]);
+    void capped.then(() => {
+      if (done) return;
+      setStage('arriving');
+      const dur = (calm ? ARRIVAL_CALM : ARRIVAL) * 1000;
+      const clear = calm ? 900 : 1300;
+      // The glide's clock starts on its first drawn frame (a busy first frame must not skip it).
+      let a0 = -1;
+      const step = (now: number) => {
+        if (done) return;
+        if (a0 < 0) a0 = now;
+        const ms = now - a0;
+        place(arrivalPose(ms / dur, calm, pose));
+        setMist(1 - smooth(ms, 0, clear));
+        if (ms >= dur) return home();
+        raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    });
+    return () => {
+      done = true;
+      cancelAnimationFrame(raf);
+    };
+  }
+
+  // At rest, the hero breathes with the pointer: the camera sways a few centimetres (desktop only).
+  useEffect(() => {
+    if (stage !== 'home') return;
+    const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
+    if (!fine || qualityStore.getState().reducedMotion) return;
+    const target = { x: 0, y: 0 };
+    const cur = { x: 0, y: 0, z: 0 };
+    let raf = 0;
+    const tick = () => {
+      cur.x += (target.x - cur.x) * 0.06;
+      cur.y += (target.y - cur.y) * 0.06;
+      place(cur);
+      if (Math.abs(target.x - cur.x) + Math.abs(target.y - cur.y) > 1e-4) raf = requestAnimationFrame(tick);
+      else raf = 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      target.x = (e.clientX / window.innerWidth - 0.5) * 0.05;
+      target.y = (e.clientY / window.innerHeight - 0.5) * 0.03;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, [stage]);
+
+  // The window of clarity: it follows the pointer smoothly, fades in with the first move and out when the
+  // pointer leaves the page. Only two CSS variables per frame, on the two sharp layers' masks.
+  useEffect(() => {
+    if (!clarity || stage !== 'home') return;
+    const far = layersRef.current.find((l) => l.name === 'far')!;
+    const at = { x: 0, y: 0, a: 0 };
+    const to = { x: 0, y: 0, a: 0 };
+    let raf = 0;
+    const tick = () => {
+      // In the shop the window closes (the far country is under the blend's light there, and the masks are
+      // then never redrawn while the visitor scrolls).
+      const want = to.a * (shopK.current > 0.35 ? 0 : 1);
+      at.x += (to.x - at.x) * 0.22;
+      at.y += (to.y - at.y) * 0.22;
+      at.a += (want - at.a) * (want > at.a ? 0.08 : 0.05);
+      if (at.a < 0.004) {
+        at.a = 0;
+        for (const el of clearEls.current) if (el) el.style.opacity = '0';
+        raf = Math.abs(want - at.a) > 0.002 ? requestAnimationFrame(tick) : 0;
+        return;
+      }
+      // The hero scrolls with the page; the layers are placed in it.
+      const top = stageEl.current?.getBoundingClientRect().top ?? 0;
+      const p = layerPlacement(far, poseRef.current, window.innerWidth, window.innerHeight);
+      // The window's corner, in the layer's own px: the window moves there and its picture back by as much, so
+      // the circle's mask is never redrawn and nothing is painted again as it follows the pointer.
+      const r = CLEAR_R / p.s;
+      const cr = `${r.toFixed(1)}px`;
+      const x = (at.x - p.x) / p.s - r;
+      const y = (at.y - top - p.y) / p.s - r;
+      const there = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+      const back = `translate3d(${(-x).toFixed(1)}px, ${(-y).toFixed(1)}px, 0)`;
+      for (const el of clearEls.current) {
+        if (!el) continue;
+        if (el.style.getPropertyValue('--cr') !== cr) el.style.setProperty('--cr', cr);
+        el.style.transform = there;
+        (el.firstElementChild as HTMLElement).style.transform = back;
+        el.style.opacity = at.a.toFixed(3);
+      }
+      const moving = Math.abs(to.x - at.x) + Math.abs(to.y - at.y) > 0.3 || Math.abs(want - at.a) > 0.002;
+      raf = moving ? requestAnimationFrame(tick) : 0;
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return;
+      if (at.a < 0.01) {
+        at.x = e.clientX;
+        at.y = e.clientY;
+      }
+      to.x = e.clientX;
+      to.y = e.clientY;
+      to.a = 1;
+      kick();
+    };
+    const onOut = (e: PointerEvent) => {
+      if (e.relatedTarget) return;
+      to.a = 0;
+      kick();
+    };
+    const root = rootEl.current;
+    window.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerout', onOut);
+    root?.addEventListener('scroll', kick, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerout', onOut);
+      root?.removeEventListener('scroll', kick);
+      cancelAnimationFrame(raf);
+    };
+  }, [stage, clarity]);
+
+  // The header takes a soft cream behind it once the page is off the hero's sky (the shop, over the blend's
+  // light, has it from the start), and the dark of the ink on Our Story.
+  const [scrolled, setScrolled] = useState(false);
+  const header = useRef({ scrolled: false });
+  const heroH = useRef(0);
+  const current: NavSection = page === 'shop' ? 'chai-tea' : page === 'about' ? 'chai-about' : 'chai-top';
+
+  /**
+   * The header, and how much tea falls where (CM-012), for the page and its scroll: in the picture behind the
+   * words (a little thicker in the shop), over the sections once the hero has gone up, and lit over the ink of
+   * Our Story. A scroll frame reads nothing but the scroll position (the hero's height is measured on resize).
+   */
+  const sync = () => {
+    const root = rootEl.current;
+    if (!root) return;
+    const top = root.scrollTop;
+    const vh = window.innerHeight;
+    const pg = pageRef.current;
+    const isScrolled = pg !== 'home' || top > vh * 0.6;
+    if (isScrolled !== header.current.scrolled) setScrolled((header.current.scrolled = isScrolled));
+    // Once the picture is off the screen its drifts stop.
+    const el = journeyEl.current;
+    const away = pg === 'home' && top > heroH.current;
+    if (el && (el.dataset.away === '') !== away) {
+      if (away) el.dataset.away = '';
+      else delete el.dataset.away;
+    }
+    if (pg === 'about') {
+      rain.current?.setLevels({ back: 0, sections: 1, dark: 1 });
+      return;
+    }
+    const cover = pg === 'home' ? Math.min(1, Math.max(0, (heroH.current - top) / vh)) : 1;
+    rain.current?.setLevels({
+      back: cover > 0 ? 0.72 + 0.28 * shopK.current : 0,
+      sections: 1 - cover,
+      dark: 0,
+    });
+  };
+  useEffect(() => {
+    const root = rootEl.current;
+    if (!root) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          sync();
+        });
+    };
+    const relayout = () => {
+      heroH.current = heroEl.current?.offsetHeight ?? window.innerHeight;
+      onScroll();
+    };
+    root.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', relayout);
+    relayout();
+    return () => {
+      root.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', relayout);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  /**
+   * From the hero to the shop (CM-010, CM-014): `p` (0 at the hero, 1 with the shop in place) takes the hero's
+   * words out and the blend's light across; the camera moves in by it, and the tea thickens with it. Written to
+   * the moving parts only, and only when it changes (CM-011).
+   */
+  const lastShop = useRef(-1);
+  /**
+   * The parts the move fades and slides, each written to directly (their own layers: the compositor moves
+   * them, nothing is painted or restyled under them). The hero's words and its scroll cue go first, the
+   * light comes across from the open side, and the shop's parts rise one after the other; on a phone the
+   * shop is one card that rises as a whole, and under reduced motion nothing slides.
+   */
+  const shopMove = (p: number, vh: number) => {
+    const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+    const still = qualityStore.getState().reducedMotion;
+    const card = window.innerWidth <= 900;
+    const set = (el: HTMLElement | null | undefined, opacity: number, transform: string) => {
+      if (!el) return;
+      el.style.opacity = opacity.toFixed(3);
+      el.style.transform = transform;
+    };
+    const out = clamp01(1 - p * 2.4);
+    set(copyEl.current, out, still ? 'none' : `translate3d(0, ${(-0.05 * vh * p).toFixed(1)}px, 0)`);
+    set(cueEl.current, out, 'none');
+    set(meltEl.current, clamp01(1 - p * 3), 'none');
+    set(
+      washEl.current,
+      clamp01(p * 1.25 - 0.1),
+      still || card ? 'none' : `translate3d(${((1 - p) * 18).toFixed(2)}%, 0, 0)`,
+    );
+    const panel = shopEl.current?.querySelector<HTMLElement>('.chai-shop__panel');
+    if (card) {
+      const k = clamp01((p - 0.35) * 1.8);
+      set(panel, k, still || k >= 1 ? 'none' : `translate3d(0, ${((1 - k) * 0.18 * vh).toFixed(1)}px, 0)`);
+      return;
+    }
+    set(panel, 1, 'none');
+    const parts = panel?.children ?? [];
+    Array.from(parts).forEach((part, i) => {
+      const k = clamp01((p - (SHOP_FROM[i] ?? 0.5)) * 4);
+      set(
+        part as HTMLElement,
+        k,
+        still || k >= 1 ? 'none' : `translate3d(0, ${((1 - k) * 35).toFixed(1)}px, 0)`,
+      );
+    });
+  };
+  const setShop = (to: number) => {
+    const el = journeyEl.current;
+    const p = Math.round(Math.min(1, Math.max(0, to)) * 1000) / 1000;
+    if (!el || p === lastShop.current) return;
+    lastShop.current = p;
+    shopMove(p, window.innerHeight);
+    // Off: the shop is not there at all (the homepage and Our Story); in: the hero's words are gone.
+    const side = p === 0 ? 'off' : p > 0.55 ? 'in' : 'out';
+    if (el.dataset.shop !== side) el.dataset.shop = side;
+    const k = smooth(p, 0, 1);
+    if (Math.abs(k - shopK.current) > 1e-4) {
+      shopK.current = k;
+      place(basePose.current);
+    }
+  };
+  /** To the shop (1) or the hero (0): one short move from wherever it is, or straight there. */
+  const shopTween = useRef(0);
+  const shopTo = (to: 0 | 1, glide: boolean) => {
+    cancelAnimationFrame(shopTween.current);
+    const from = Math.max(0, lastShop.current);
+    if (!glide || from === to) {
+      setShop(to);
+      sync();
+      return;
+    }
+    const calm = qualityStore.getState().reducedMotion;
+    const ms = (calm ? CALM_SHOP_MS : to ? SHOP_IN_MS : SHOP_OUT_MS) * Math.abs(to - from);
+    let t0 = -1;
+    const step = (now: number) => {
+      if (t0 < 0) t0 = now;
+      const f = Math.min(1, (now - t0) / ms);
+      setShop(from + (to - from) * easeInOut(f));
+      sync();
+      if (f < 1) shopTween.current = requestAnimationFrame(step);
+    };
+    shopTween.current = requestAnimationFrame(step);
+  };
+  useEffect(() => () => cancelAnimationFrame(shopTween.current), []);
+
+  /**
+   * A new page (CM-014): back to its top, the scene set for it — between the homepage and the shop the camera
+   * makes the move (unless a cross-fade carries the change), elsewhere it is simply there — and focus on it.
+   */
+  const prevPage = useRef<ChaiPage | null>(null);
+  /** The next change of page is carried by a cross-fade: the scene is set at once under it. */
+  const faded = useRef(false);
+  /** Connect's part of Our Story, to go to once that page is there. */
+  const pendingPart = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const prev = prevPage.current;
+    prevPage.current = page;
+    const root = rootEl.current;
+    const moved = prev !== null && prev !== page;
+    if (moved && root) root.scrollTop = 0;
+    const glide =
+      moved &&
+      !faded.current &&
+      stage === 'home' &&
+      ((prev === 'home' && page === 'shop') || (prev === 'shop' && page === 'home'));
+    faded.current = false;
+    shopTo(page === 'shop' ? 1 : 0, glide);
+    if (!moved || !root) return;
+    const part = pendingPart.current ? root.querySelector<HTMLElement>(`#${pendingPart.current}`) : null;
+    pendingPart.current = null;
+    if (part) part.scrollIntoView({ block: 'start' });
+    const target =
+      part ??
+      (page === 'shop'
+        ? shopEl.current
+        : page === 'about'
+          ? root.querySelector('#chai-about')
+          : heroEl.current);
+    target?.focus({ preventScroll: true });
+    // The page's own state is in refs; this runs per page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  // The tea (CM-010, CM-012): its pieces load once the page is at rest, and fall wherever the visitor is.
+  useEffect(() => {
+    if (stage !== 'home') return;
+    const back = rainBack.current;
+    const front = rainFront.current;
+    if (!back || !front) return;
+    let live = true;
+    const img = new Image();
+    img.src = teaLeavesUrl;
+    const onResize = () => rain.current?.resize();
+    void img
+      .decode()
+      .catch(() => {})
+      .then(() => {
+        if (!live || !img.naturalWidth) return;
+        const q = qualityStore.getState();
+        rain.current = startTeaRain(back, front, img, { lite: q.tier === 'lite', still: q.reducedMotion });
+        sync();
+        window.addEventListener('resize', onResize);
+      });
+    return () => {
+      live = false;
+      window.removeEventListener('resize', onResize);
+      rain.current?.destroy();
+      rain.current = null;
+    };
+  }, [stage]);
+
+  // New images for the screen (a phone turned round) come with new boxes: placed again where the camera is.
+  useLayoutEffect(() => {
+    place(basePose.current);
+  }, [size]);
+
+  // A resize re-places the layers at rest.
+  useEffect(() => {
+    if (stage !== 'home') return;
+    const onResize = () => place({ x: 0, y: 0, z: 0 });
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [stage]);
+
+  // Once at rest, quietly fetch the other time of day so a switch never waits.
+  useEffect(() => {
+    if (stage !== 'home' || bothTimes) return;
+    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 600));
+    const id = idle(() => setBothTimes(true));
+    return () => (window.cancelIdleCallback ?? window.clearTimeout)(id);
+  }, [stage, bothTimes]);
+
+  /** Both times of day decoded (or 1.5 s gone: whatever has arrived shows, the rest fades in as it lands). */
+  const whenReady = (go: () => void) => {
+    if (ready.current) return go();
+    if (waiting.current) return;
+    waiting.current = true;
+    setBothTimes(true);
+    window.requestAnimationFrame(() => {
+      const imgs = [...(stageEl.current?.querySelectorAll<HTMLImageElement>('img[data-time]') ?? [])];
+      const decoded = Promise.all(imgs.map((el) => (el.src ? el.decode().catch(() => {}) : null)));
+      void Promise.race([decoded, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+        ready.current = true;
+        waiting.current = false;
+        go();
+      });
+    });
+  };
+
+  /**
+   * Choose a blend: the switch and the words follow the choice at once; the scene's time of day moves toward
+   * it from wherever it is (a change of mind mid-way turns it round, smoothly).
+   */
+  const choose = (next: BlendId) => {
+    if (next === wanted.current || stage !== 'home') return;
+    const calm = qualityStore.getState().reducedMotion;
+    wanted.current = next;
+    setBlend(next);
+    setSwitched(true);
+    setSaid('');
+    window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(
+      () => setShown(wanted.current),
+      calm ? CALM_COPY_OUT_MS : COPY_OUT_MS,
+    );
+    whenReady(() => {
+      const to = timeOf(wanted.current) === 'dusk' ? 1 : 0;
+      if (to === clock.current!.t) return;
+      setSwitching(true);
+      clock.current!.to(to, calm ? CALM_TIME_MS : TIME_MS, () => {
+        setSwitching(false);
+        setSaid(copy.hero.switched(copy.blends[wanted.current].name));
+      });
+    });
+  };
+
+  const onBlendKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const keys: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    if (!(e.key in keys)) return;
+    e.preventDefault();
+    // Right to left, the next blend is to the left.
+    const flip = LOCALES[lang].dir === 'rtl' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') ? -1 : 1;
+    const step = keys[e.key]! * flip;
+    const i = (BLENDS.indexOf(blend) + step + BLENDS.length) % BLENDS.length;
+    const next = BLENDS[i]!;
+    (e.currentTarget.querySelector(`[data-blend="${next}"]`) as HTMLElement | null)?.focus();
+    choose(next);
+  };
+
+  const scrollBehavior = (): ScrollBehavior => (qualityStore.getState().reducedMotion ? 'auto' : 'smooth');
+  const toTop = () => rootEl.current?.scrollTo({ top: 0, behavior: scrollBehavior() });
+  /** Scroll to a part of the page shown, focus with it. */
+  const toPart = (id: string) => {
+    const el = rootEl.current?.querySelector<HTMLElement>(`#${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+    el.focus({ preventScroll: true });
+  };
+  /**
+   * Go to a page (CM-014). Between the hero and the shop the scene makes its own move; any other change (Our
+   * Story, or the homepage scrolled down) is a short cross-fade (a view transition: two pictures of the page,
+   * nothing laid out or painted again while it plays). Under reduced motion, or without view transitions, the
+   * page is simply there.
+   */
+  const goPage = (to: ChaiPage, part?: string) => {
+    if (to === pageRef.current) {
+      if (part) toPart(part);
+      else toTop();
+      return;
+    }
+    pendingPart.current = part ?? null;
+    const go = () => navigate(to);
+    const atHero = (rootEl.current?.scrollTop ?? 0) < window.innerHeight * 0.3;
+    const glides = atHero && (to === 'shop' || to === 'home') && pageRef.current !== 'about';
+    const fade =
+      !glides &&
+      stage === 'home' &&
+      typeof document.startViewTransition === 'function' &&
+      !qualityStore.getState().reducedMotion;
+    if (!fade) return go();
+    faded.current = true;
+    const html = document.documentElement;
+    html.dataset.vt = 'chai';
+    const t = document.startViewTransition(() => flushSync(go));
+    void t.finished.finally(() => {
+      if (html.dataset.vt === 'chai') delete html.dataset.vt;
+    });
+  };
+  /** The nav: to a page, in the site (no reload); Connect is Our Story's last part. */
+  const goTo = (id: NavSection) => goPage(NAV_PAGE[id], id === 'chai-connect' ? id : undefined);
+  /** Show a blend in the hero: back up to it first, so the change of light is seen. */
+  const explore = (id: BlendId) => {
+    const root = rootEl.current;
+    if (!root || root.scrollTop < 40) return choose(id);
+    toTop();
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      root.removeEventListener('scrollend', go);
+      choose(id);
+    };
+    root.addEventListener('scrollend', go);
+    timers.current.push(window.setTimeout(go, 1200));
+  };
+  const copyState = shown !== blend ? 'out' : shown === initialBlendRef.current && !switched ? 'in' : 'back';
+  const time = timeOf(blend);
+  const b = copy.blends[shown];
+  const first = (t: 'day' | 'dusk') => (t === timeOf(initialBlendRef.current) ? { 'data-first': '' } : {});
+  /**
+   * An earlier and a later image of a plate; the other time's only gets its source once it is wanted. `soft`:
+   * the air's softened plate (the base under the window of clarity); `clear`: the sharp plate seen through
+   * that window, fetched with the other time of day (the entrance never waits for it).
+   */
+  const plate = (name: 'far' | 'sky' | 'ledge' | 'leaves', set: 'sharp' | 'soft' | 'clear' = 'sharp') =>
+    (['day', 'dusk'] as const).map((t) => {
+      const want = set === 'clear' ? bothTimes : bothTimes || t === timeOf(initialBlendRef.current);
+      const src =
+        set === 'soft' && (name === 'far' || name === 'sky') ? SOFT[name][t][size] : PLATES[name][t][size];
+      return (
+        <img
+          key={t}
+          className={`chai-plate chai-plate--${t}`}
+          src={want ? src : undefined}
+          alt=""
+          decoding="async"
+          draggable={false}
+          data-time={t}
+          {...(set === 'clear' ? {} : first(t))}
+        />
+      );
+    });
+  /**
+   * The far country's and the sky's sharp plates, through the pointer's window: a box the size of the circle
+   * that slides with the pointer, the whole sharp picture inside it sliding back the other way (CM-013).
+   */
+  const clear = (i: number, l: { w: number; h: number }, children: ReactNode) => (
+    <div
+      className="chai-clear"
+      ref={(el) => {
+        clearEls.current[i] = el;
+      }}
+    >
+      <div className="chai-clear__picture" style={{ width: l.w, height: l.h }}>
+        {children}
+      </div>
+    </div>
+  );
+  const base = clarity ? 'soft' : 'sharp';
+  const packState = (id: BlendId, ok: boolean) => setPacksOk((p) => (p[id] === ok ? p : { ...p, [id]: ok }));
+
+  return (
+    <div
+      ref={rootEl}
+      className="chai"
+      lang={lang}
+      dir={LOCALES[lang].dir}
+      data-stage={stage}
+      data-page={page}
+      data-end={page === 'about' || undefined}
+      data-scrolled={scrolled || undefined}
+      data-testid="chai-site"
+      style={{ '--chai-veil': CLOUD_VEIL } as CSSProperties}
+    >
+      <ChaiNav lang={lang} current={current} onGo={goTo} />
+
+      <main id="scene-main" className="chai-main" tabIndex={-1}>
+        {/* The hero and the shop: one shot, the picture pinned behind both (CM-010). */}
+        <div ref={journeyEl} className="chai-journey">
+          <section
+            ref={heroEl}
+            id="chai-top"
+            className="chai-hero"
+            aria-labelledby="chai-hero-title"
+            tabIndex={-1}
+            data-testid="chai-hero"
+            data-blend={blend}
+            data-time={time}
+            data-switching={switching || undefined}
+            data-copy={copyState}
+            data-clarity={clarity || undefined}
+            data-packs={BLENDS.filter((id) => packsOk[id]).join(' ')}
+          >
+            <div ref={stageEl} className="chai-stage" aria-hidden="true">
+              {layers.map((l, i) => (
+                <div
+                  key={l.name}
+                  ref={(el) => {
+                    layerEls.current[i] = el;
+                  }}
+                  className={`chai-layer chai-layer--${l.name}`}
+                  style={
+                    {
+                      width: l.w,
+                      height: l.h,
+                      ...(l.name === 'sky' ? { '--sky-mask': `url(${skyFor(size).mask})` } : {}),
+                    } as CSSProperties
+                  }
+                >
+                  {l.name === 'sky' ? (
+                    <>
+                      {/* The clouds drift on as the time of day turns; the sun travels behind the ridgeline. */}
+                      <div className="chai-sky">{plate('sky', base)}</div>
+                      {clarity && clear(1, l, <div className="chai-sky">{plate('sky', 'clear')}</div>)}
+                      <div ref={sunEl} className="chai-sun">
+                        <span className="chai-sun__halo" />
+                        <span className="chai-sun__halo chai-sun__halo--late" />
+                        <span className="chai-sun__disc" />
+                      </div>
+                    </>
+                  ) : l.name === 'pouch' ? (
+                    // Both packs in one box: Heritage Blend under, The Lovely Blend over it, uncovered from the
+                    // sun's side by a soft edge as the time of day turns (`--reveal`).
+                    BLENDS.map((id) => (
+                      <span key={id} className={`chai-pouch chai-pouch--${id}`}>
+                        <img
+                          src={bothTimes || id === initialBlendRef.current ? POUCHES[id][size] : undefined}
+                          alt=""
+                          decoding="async"
+                          draggable={false}
+                          data-time={timeOf(id)}
+                          onLoad={() => packState(id, true)}
+                          onError={() => packState(id, false)}
+                          {...(id === initialBlendRef.current ? { 'data-first': '' } : {})}
+                        />
+                      </span>
+                    ))
+                  ) : l.name === 'far' ? (
+                    <>
+                      {plate('far', base)}
+                      {clarity && clear(0, l, plate('far', 'clear'))}
+                    </>
+                  ) : l.name === 'leaves' ? (
+                    // The wind: a slow sway, and a gust as the time of day turns.
+                    <div className="chai-leaves">
+                      <div className="chai-leaves__sway">{plate('leaves')}</div>
+                    </div>
+                  ) : (
+                    plate(l.name)
+                  )}
+                </div>
+              ))}
+              <div className="chai-mist chai-mist--a" />
+              <div className="chai-mist chai-mist--b" />
+              {/* The blend's light across the open side as the shop comes in, and the tea falling through it. */}
+              <div ref={washEl} className="chai-wash" />
+              <canvas ref={rainBack} className="chai-rain" />
+            </div>
+            <p className="sr-only">{copy.blends[blend].heroAlt}</p>
+            <div ref={copyEl} className="chai-hero__copy">
+              <p className="chai-eyebrow chai-eyebrow--hero">
+                <span className="chai-eyebrow__mark" aria-hidden="true" />
+                {copy.hero.eyebrow} · {b.size}
+              </p>
+              <h1 id="chai-hero-title" className="chai-headline" lang="ckb" dir="rtl">
+                {copy.brand.slogan}
+              </h1>
+              <p className="chai-blend-name" data-testid="chai-blend-name">
+                {b.name}
+              </p>
+              <div className="chai-hero__choose">
+                <p className="chai-lede">{b.lede}</p>
+                <div
+                  className="chai-blends"
+                  role="radiogroup"
+                  aria-label={copy.hero.blends}
+                  onKeyDown={onBlendKey}
+                  data-testid="chai-blends"
+                >
+                  {BLENDS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      className="chai-blend"
+                      data-blend={id}
+                      aria-checked={blend === id}
+                      tabIndex={blend === id ? 0 : -1}
+                      onClick={() => choose(id)}
+                    >
+                      <span className="chai-blend__swatch" aria-hidden="true" />
+                      <span className="chai-blend__name">{copy.blends[id].name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="sr-only" role="status">
+                {said}
+              </p>
+            </div>
+            <a
+              ref={cueEl}
+              className="chai-scroll"
+              href="#chai-other"
+              onClick={(e) => {
+                e.preventDefault();
+                toPart('chai-other');
+              }}
+            >
+              <span>{copy.hero.scroll}</span>
+              <span className="chai-scroll__line" aria-hidden="true" />
+            </a>
+            <div ref={meltEl} className="chai-hero__melt" aria-hidden="true" />
+          </section>
+
+          <Shop
+            lang={lang}
+            blend={blend}
+            shown={shown}
+            copyState={copyState}
+            onChoose={choose}
+            onBlendKey={onBlendKey}
+            sectionRef={shopEl}
+          />
+        </div>
+
+        <section
+          id="chai-other"
+          className="chai-other"
+          aria-labelledby="chai-other-title"
+          tabIndex={-1}
+          data-blend={featured}
+          data-time={timeOf(featured)}
+          data-testid="chai-other"
+        >
+          {/* The same country, in the light that goes with this blend. */}
+          <div className="chai-other__land" aria-hidden="true">
+            {(['day', 'dusk'] as const).map((t) => (
+              <img
+                key={t}
+                className={`chai-other__plate chai-other__plate--${t}`}
+                src={PLATES.far[t].small}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            ))}
+          </div>
+          <div className="chai-other__inner">
+            <figure className="chai-other__pack">
+              {BLENDS.map((id) => (
+                <img
+                  key={id}
+                  className="chai-other__img"
+                  data-on={id === featured || undefined}
+                  src={packOf(id)}
+                  alt={id === featured ? copy.blends[id].packAlt : ''}
+                  width={id === 'lovely' ? 706 : 720}
+                  height={996}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ))}
+            </figure>
+            <div className="chai-other__copy">
+              <p className="chai-eyebrow chai-eyebrow--rule">{copy.other.eyebrow}</p>
+              <h2 id="chai-other-title" className="chai-h2" key={featured}>
+                {copy.blends[featured].name}
+              </h2>
+              <p className="chai-other__lede" key={`${featured}-lede`}>
+                {copy.blends[featured].lede}
+              </p>
+              <button type="button" className="chai-cta" onClick={() => explore(featured)}>
+                <span>{copy.other.explore}</span>
+                <Arrow />
+              </button>
+            </div>
+            <div className="chai-other__picker" role="group" aria-label={copy.other.blends}>
+              {BLENDS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="chai-thumb"
+                  data-blend={id}
+                  aria-pressed={id === featured}
+                  onClick={() => setFeatured(id)}
+                >
+                  <span className="chai-thumb__ring">
+                    <img src={packOf(id)} alt="" width={72} height={100} loading="lazy" decoding="async" />
+                  </span>
+                  <span className="chai-thumb__name">{copy.blends[id].name}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                className="chai-thumb__next"
+                aria-label={copy.other.next}
+                onClick={() => setFeatured(otherBlend(featured))}
+              >
+                <Arrow />
+              </button>
+            </div>
+          </div>
+          <img
+            className="chai-other__mascot"
+            src={mascotUrl}
+            alt={copy.product.mascotAlt}
+            width={632}
+            height={640}
+            loading="lazy"
+            decoding="async"
+          />
+          {/* On to Our Story, its own page. */}
+          <a
+            className="chai-other__scroll"
+            href={pathOf('about')}
+            onClick={(e) => {
+              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              e.preventDefault();
+              goPage('about');
+            }}
+          >
+            <span>{copy.about.title}</span>
+            <Arrow />
+          </a>
+        </section>
+      </main>
+
+      {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}
+      <About lang={lang} onTop={toTop} />
+
+      {/* The few pieces of tea that fall right past the camera, in front of everything but the header. */}
+      <canvas ref={rainFront} className="chai-rain chai-rain--front" aria-hidden="true" />
+      <div ref={mist} className="chai-veil" aria-hidden="true" />
+    </div>
+  );
+}

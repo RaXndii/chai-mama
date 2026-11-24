@@ -1,0 +1,2476 @@
+/* ==========================================================================
+   Chai Mama homepage (DECISIONS CM-001, CM-006, CM-008). Scoped under .chai. The pack's palette: saffron
+   label, black line-art ink, cream paper; the picture's: tea greens, the valley's mist, mossy stone.
+   ========================================================================== */
+
+.chai {
+  --saffron: #fea500;
+  --saffron-soft: #ffc54d;
+  --ink: #16130f;
+  --ink-2: rgb(22 19 15 / 0.72);
+  --cream: #f4efe4;
+  --paper: #faf6ee;
+  --leaf: #2f6e2c;
+  --stone: #3b3027;
+  --serif: 'Fraunces Variable', 'Fraunces', 'Noto Kufi Arabic Variable', Georgia, serif;
+  --body: 'Inter Variable', 'Inter', 'Vazirmatn Variable', system-ui, sans-serif;
+  --kufi: 'Noto Kufi Arabic Variable', 'Vazirmatn Variable', Tahoma, sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Slow to start, slow to settle (the blend switch's own pace is timeOfDay.ts's). */
+  --ease-time: cubic-bezier(0.45, 0, 0.2, 1);
+  --heritage: #fea500;
+  --lovely: #c62026;
+  /* The sections below the hero: the reference's sunlit saffron (CM-007). */
+  --sun-1: #f2bd3c;
+  --sun-2: #f5c54c;
+  --sun-3: #f7cf62;
+  --heritage-ink: #a86a00;
+  --pad: clamp(1.25rem, 0.6rem + 3vw, 4rem);
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-site);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--ink);
+  font-family: var(--body);
+  line-height: 1.6;
+  transition: opacity 0.42s var(--ease);
+}
+
+/* In the gate's cloud and during the arrival nothing scrolls; in the cloud nothing takes a click. */
+.chai[data-stage='cloud'],
+.chai[data-stage='arriving'] {
+  overflow: hidden;
+}
+
+.chai[data-stage='cloud'] {
+  pointer-events: none;
+}
+
+.chai :focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 3px;
+}
+
+/* ---------- The hero: the layered photograph ---------- */
+.chai-hero {
+  position: relative;
+  min-block-size: 100svh;
+  overflow: hidden;
+  /* Behind the picture (only ever seen past its margins): sky above, the ground below. */
+  background: linear-gradient(180deg, #d9cdbd, #d9cdbd 35%, var(--stone) 65%);
+}
+
+.chai-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.chai-layer {
+  position: absolute;
+  inset-block-start: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Each photographic layer: its earlier plate and, over it, the later plate of the same picture, faded in by the
+   time of day (the page sets each layer's --dusk every frame of a switch, CM-008). */
+.chai-plate {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+}
+
+.chai-plate--dusk {
+  opacity: var(--dusk, 0);
+}
+
+/* At rest on either end (the page's data-at) the plate that is covered is not drawn: the later picture's plates
+   would otherwise be drawn over the earlier ones on every frame for as long as the red blend is shown. During a
+   switch the later plates fade on their own layers, so the picture under them is not painted again each frame
+   (CM-013). */
+.chai-layer[data-at='dusk'] .chai-plate--day,
+.chai-layer[data-at='day'] .chai-plate--dusk {
+  visibility: hidden;
+}
+
+.chai-hero[data-switching] .chai-plate--dusk {
+  will-change: opacity;
+}
+
+/* The window of clarity (CM-007): the sharp plates over the air's softened ones, seen through a soft-edged
+   circle that follows the pointer. The window is a box the circle's size (--cr in layer px) that the page slides
+   under the pointer, the sharp picture inside it sliding back by as much: its mask covers only the circle and is
+   never redrawn, where a mask over the whole picture made every frame several times dearer (CM-013). Only the
+   far country and the sky: the pack, the rock and the words are always sharp. */
+.chai-clear {
+  position: absolute;
+  left: 0;
+  top: 0;
+  inline-size: calc(var(--cr, 320px) * 2);
+  block-size: calc(var(--cr, 320px) * 2);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  -webkit-mask: radial-gradient(
+    circle closest-side,
+    #000 0%,
+    rgb(0 0 0 / 0.92) 28%,
+    rgb(0 0 0 / 0.55) 58%,
+    rgb(0 0 0 / 0.18) 82%,
+    transparent 100%
+  );
+  mask: radial-gradient(
+    circle closest-side,
+    #000 0%,
+    rgb(0 0 0 / 0.92) 28%,
+    rgb(0 0 0 / 0.55) 58%,
+    rgb(0 0 0 / 0.18) 82%,
+    transparent 100%
+  );
+}
+
+.chai-clear__picture {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s;
+}
+
+/* While the light changes the window closes (both times of day are being drawn then), and opens again after. */
+.chai-hero[data-switching] .chai-clear__picture {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s 0.3s;
+}
+
+/* The wind in the big leaves in front: a slow sway bending them from the stem (a skew, the foot still),
+   and a gust as the time of day turns. */
+.chai-leaves,
+.chai-leaves__sway {
+  position: absolute;
+  inset: 0;
+  transform-origin: 45% 100%;
+}
+
+.chai-leaves__sway {
+  animation: chai-sway 7s ease-in-out infinite alternate;
+}
+
+.chai-hero[data-switching] .chai-leaves {
+  animation: chai-gust 2.2s var(--ease-time) 0.15s;
+}
+
+@keyframes chai-sway {
+  from {
+    transform: skewX(-0.45deg);
+  }
+  to {
+    transform: skewX(0.6deg);
+  }
+}
+
+@keyframes chai-gust {
+  30% {
+    transform: skewX(1.5deg) scaleY(0.996);
+  }
+  62% {
+    transform: skewX(-0.5deg);
+  }
+}
+
+/* The sky behind the ranges: masked by their ridgeline, the clouds drift and the sun travels in it. */
+.chai-layer--sky {
+  overflow: hidden;
+  -webkit-mask: var(--sky-mask) 0 0 / 100% 100% no-repeat;
+  mask: var(--sky-mask) 0 0 / 100% 100% no-repeat;
+}
+
+/* The picture's sky (carried down behind the ranges): the time of day carries it a little further on
+   (--drift). */
+.chai-sky {
+  position: absolute;
+  inset: 0;
+  translate: calc(var(--drift, 0) * -44px) 0;
+}
+
+/* The sun: its disc is the page's (the plates have the wide glow around it, each for its time of day). The page
+   moves it in the sky layer — higher earlier, lower later, just over the right-hand ranges — so the ridgeline
+   is in front of it. --late takes its light from a whiter day sun to the picture's warm one. */
+.chai-sun {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.chai-sun > span {
+  position: absolute;
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.chai-sun__disc {
+  inline-size: 34px;
+  block-size: 34px;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 250) 0 34%,
+    rgb(255 250 228 / 0.95) 46%,
+    rgb(255 236 186 / 0.55) 62%,
+    transparent 72%
+  );
+}
+
+.chai-sun__halo {
+  inline-size: 240px;
+  block-size: 240px;
+  background: radial-gradient(
+    circle,
+    rgb(255 252 240 / 0.7),
+    rgb(255 246 222 / 0.32) 18%,
+    rgb(255 240 210 / 0.08) 42%,
+    transparent 68%
+  );
+  opacity: calc(1 - var(--late, 0));
+}
+
+.chai-sun__halo--late {
+  background: radial-gradient(
+    circle,
+    rgb(255 244 214 / 0.85),
+    rgb(255 214 140 / 0.4) 16%,
+    rgb(255 176 90 / 0.12) 40%,
+    transparent 66%
+  );
+  opacity: var(--late, 0);
+}
+
+/* The two packs share one box on the rock; neither moves. Heritage Blend stands under The Lovely Blend, and
+   the time of day uncovers the red pack across the yellow one from the sun's side (--reveal 0 → 1): a soft
+   edge, about a third of the pack wide, so the label turns as the light passes — no flash, no gap, the
+   ground behind never shows. Once the red pack is all there, the yellow one goes from under it (its outline
+   is a hair wider). A pack whose picture did not load is never uncovered, nor taken from under the other. */
+.chai-pouch {
+  position: absolute;
+  inset: 0;
+}
+
+.chai-pouch img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+}
+
+.chai-pouch--lovely {
+  --edge: calc((1 - var(--reveal, 0)) * 116% - 8%);
+  -webkit-mask: linear-gradient(100deg, transparent calc(var(--edge) - 8%), #000 calc(var(--edge) + 8%));
+  mask: linear-gradient(100deg, transparent calc(var(--edge) - 8%), #000 calc(var(--edge) + 8%));
+}
+
+.chai-hero[data-packs~='lovely'] .chai-pouch--heritage {
+  opacity: calc(1 - clamp(0, (var(--reveal, 0) - 0.9) * 11, 1));
+}
+
+.chai-hero:not([data-packs~='lovely']) .chai-pouch--lovely {
+  visibility: hidden;
+}
+
+.chai-hero:not([data-packs~='heritage']) .chai-pouch--lovely {
+  -webkit-mask: none;
+  mask: none;
+}
+
+/* At rest the edge is off the pack: the red pack is drawn without its mask, and the pack that is covered not at
+   all (CM-013). */
+.chai-layer[data-at='dusk'] .chai-pouch--lovely {
+  -webkit-mask: none;
+  mask: none;
+}
+
+.chai-hero[data-packs~='lovely'] .chai-layer[data-at='dusk'] .chai-pouch--heritage,
+.chai-hero[data-packs~='heritage'] .chai-layer[data-at='day'] .chai-pouch--lovely {
+  visibility: hidden;
+}
+
+/* Mist drifting over the valley at rest: soft, slow, barely there. Later in the day it takes the gold (--mist);
+   during a switch it swells a little. */
+.chai-mist {
+  position: absolute;
+  inset-inline: -20%;
+  block-size: 34%;
+  inset-block-start: 22%;
+  background:
+    radial-gradient(42% 46% at 30% 50%, rgb(255 255 255 / 0.32), transparent 70%),
+    radial-gradient(36% 40% at 72% 56%, rgb(255 255 255 / 0.24), transparent 72%);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: chai-drift 38s linear infinite alternate;
+}
+
+.chai-mist::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(42% 46% at 30% 50%, rgb(255 222 160 / 0.32), transparent 70%),
+    radial-gradient(36% 40% at 72% 56%, rgb(255 204 140 / 0.26), transparent 72%);
+  opacity: var(--mist, 0);
+}
+
+.chai-hero[data-switching] .chai-mist--a {
+  animation:
+    chai-drift 38s linear infinite alternate,
+    chai-swell 2.2s var(--ease-time) 0.1s;
+}
+
+@keyframes chai-swell {
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.chai-mist--b {
+  inset-block-start: 30%;
+  opacity: 0.35;
+  animation-duration: 52s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes chai-drift {
+  from {
+    translate: -6% 0;
+  }
+  to {
+    translate: 6% -2%;
+  }
+}
+
+/* The mist the flight hands off in, and the arrival clears. */
+.chai-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  background:
+    radial-gradient(70% 60% at 30% 35%, rgb(255 252 244 / 0.9), transparent 70%),
+    radial-gradient(60% 50% at 75% 70%, rgb(214 224 228 / 0.7), transparent 70%), var(--chai-veil);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Header (CM-008) ---------- */
+/* The page's links at the start, the logo in the middle, the language at the end; over the hero's
+   bright sky in either light it is ink on air, and once the page has scrolled on it takes a soft glass. */
+.chai-header {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  padding: calc(var(--space-3) + var(--safe-top)) var(--pad) var(--space-3);
+  opacity: 0;
+  translate: 0 -8px;
+  transition:
+    opacity 0.8s var(--ease-out) 0.25s,
+    translate 0.8s var(--ease-out) 0.25s,
+    background-color 0.4s var(--ease),
+    box-shadow 0.4s var(--ease);
+  pointer-events: none;
+}
+
+.chai[data-stage='home'] .chai-header {
+  opacity: 1;
+  translate: none;
+  pointer-events: auto;
+}
+
+/* A plain cream, not a frosted glass: a blur behind the header would be worked out again on every frame of a
+   scroll (CM-011). */
+.chai[data-scrolled] .chai-header {
+  background: rgb(250 246 238 / 0.93);
+  box-shadow: 0 1px 0 rgb(22 19 15 / 0.08);
+}
+
+.chai[data-end] .chai-header {
+  background: rgb(20 16 12 / 0.9);
+  box-shadow: 0 1px 0 rgb(246 238 221 / 0.08);
+}
+
+.chai-header__start,
+.chai-header__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.chai-header__end {
+  justify-content: flex-end;
+}
+
+.chai-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-block-size: 40px;
+  padding: 0.45em 1em;
+  border: 1px solid rgb(22 19 15 / 0.2);
+  border-radius: var(--radius-pill);
+  background: rgb(250 246 238 / 0.86);
+  color: var(--ink);
+  font: 600 0.88rem / 1 var(--body);
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+
+.chai-pill:hover {
+  border-color: var(--saffron);
+  background: rgb(254 165 0 / 0.18);
+}
+
+/* The page's links: words on the air, the current one underlined in saffron. */
+.chai-nav__list {
+  display: flex;
+  gap: clamp(0.9rem, 0.2rem + 1.2vw, 1.8rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
+  color: var(--ink);
+  font: 600 0.9rem / 1 var(--body);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  text-shadow: 0 1px 14px rgb(255 248 232 / 0.85);
+  transition: color 0.3s var(--ease);
+}
+
+.chai-nav__link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 6px;
+  block-size: 2px;
+  border-radius: 2px;
+  background: var(--saffron);
+  scale: 0 1;
+  transition: scale 0.35s var(--ease-out);
+}
+
+.chai-nav__link:hover::after,
+.chai-nav__link[aria-current='true']::after {
+  scale: 1 1;
+}
+
+.chai[data-end] .chai-nav__link {
+  color: var(--cream);
+  text-shadow: none;
+}
+
+.chai-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.4s var(--ease);
+}
+
+.chai[data-end] .chai-brand {
+  color: var(--cream);
+}
+
+.chai-brand__mark {
+  inline-size: 44px;
+  block-size: 44px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 1.5px rgb(22 19 15 / 0.85);
+}
+
+.chai-brand__name {
+  font: 600 clamp(1.15rem, 0.9rem + 0.7vw, 1.6rem) / 1 var(--serif);
+  letter-spacing: 0.005em;
+  text-shadow: 0 1px 14px rgb(255 248 232 / 0.7);
+}
+
+.chai[data-end] .chai-brand__name {
+  text-shadow: none;
+}
+
+/* The language: the current one, and a short list under it. */
+.chai-lang {
+  position: relative;
+}
+
+.chai-lang span:lang(ckb) {
+  font-family: var(--kufi);
+  font-weight: 700;
+  font-size: 1.05em;
+  line-height: 1.6;
+}
+
+.chai-chevron {
+  transition: rotate 0.3s var(--ease);
+}
+
+.chai-lang__toggle[aria-expanded='true'] .chai-chevron {
+  rotate: 180deg;
+}
+
+.chai-lang__list {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-end: 0;
+  min-inline-size: 9rem;
+  margin: 0;
+  padding: 0.35rem;
+  border: 1px solid rgb(22 19 15 / 0.12);
+  border-radius: 14px;
+  background: rgb(250 246 238 / 0.94);
+  box-shadow: 0 18px 40px rgb(40 26 8 / 0.18);
+  list-style: none;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.chai-lang__list[hidden],
+.chai-menu[hidden] {
+  display: none;
+}
+
+.chai-lang__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  min-block-size: 40px;
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: 600 0.92rem / 1 var(--body);
+  cursor: pointer;
+}
+
+.chai-lang__option:hover {
+  background: rgb(254 165 0 / 0.16);
+}
+
+.chai-lang__option[aria-current='true']::after {
+  content: '';
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--saffron);
+}
+
+/* The phone's menu: below the header, only when asked for. */
+.chai-menu-toggle {
+  display: none;
+  inline-size: 44px;
+  min-block-size: 44px;
+  justify-content: center;
+  padding: 0;
+}
+
+.chai-menu {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid rgb(22 19 15 / 0.1);
+  border-radius: 18px;
+  background: rgb(250 246 238 / 0.96);
+  box-shadow: 0 22px 48px rgb(40 26 8 / 0.2);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.chai-menu .chai-nav__list {
+  flex-direction: column;
+  gap: 0;
+}
+
+.chai-menu .chai-nav__link {
+  min-block-size: 48px;
+  font-size: 1.05rem;
+  text-shadow: none;
+}
+
+.chai[data-end] .chai-menu .chai-nav__link {
+  color: var(--ink);
+}
+
+.chai-menu__lang {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.chai-menu__lang .chai-pill[aria-pressed='true'] {
+  border-color: var(--saffron);
+  box-shadow: inset 0 0 0 1px var(--saffron);
+}
+
+/* The links fold into the menu where they would crowd the logo. */
+@media (max-width: 1100px) {
+  .chai-nav {
+    display: none;
+  }
+  .chai-menu-toggle {
+    display: inline-flex;
+  }
+}
+
+/* The sections the nav goes to stop below the header. */
+.chai-main > section {
+  scroll-margin-block-start: 4.5rem;
+}
+
+.chai-main > section:focus {
+  outline: none;
+}
+
+/* ---------- Hero copy ---------- */
+/* In the picture's open side, over the misty valley: the pack stands on the left in both directions (the
+   picture is never mirrored), so this is the physical right, in Kurdish as in English (CM-008: placed as in
+   the owner's picture). */
+.chai-hero__copy {
+  position: absolute;
+  inset-block-start: clamp(6rem, 22vh, 13rem);
+  right: max(var(--pad), 11vw);
+  z-index: 2;
+  max-inline-size: min(27rem, 33vw);
+  display: grid;
+  gap: 0.7rem;
+}
+
+.chai-hero__choose {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.chai-hero__copy > *,
+.chai-scroll {
+  opacity: 0;
+  translate: 0 14px;
+  transition:
+    opacity 1s var(--ease-out),
+    translate 1.1s var(--ease-out);
+}
+
+.chai[data-stage='home'] .chai-hero__copy > *,
+.chai[data-stage='home'] .chai-scroll {
+  opacity: 1;
+  translate: none;
+}
+
+.chai[data-stage='home'] .chai-hero__copy > :nth-child(2) {
+  transition-delay: 0.12s;
+}
+.chai[data-stage='home'] .chai-hero__copy > :nth-child(3) {
+  transition-delay: 0.24s;
+}
+.chai[data-stage='home'] .chai-hero__copy > :nth-child(4) {
+  transition-delay: 0.36s;
+}
+.chai[data-stage='home'] .chai-hero__copy > :nth-child(5) {
+  transition-delay: 0.48s;
+}
+.chai[data-stage='home'] .chai-scroll {
+  transition-delay: 0.6s;
+}
+
+.chai-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 0;
+  color: var(--ink);
+  font: 700 0.8rem / 1.2 var(--body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.chai-eyebrow::before {
+  content: '';
+  inline-size: 1.8rem;
+  block-size: 3px;
+  border-radius: 2px;
+  background: var(--saffron);
+}
+
+/* The hero's eyebrow: a saffron diamond, the words, a fine rule after them. */
+.chai-eyebrow--hero::before {
+  display: none;
+}
+
+.chai-eyebrow__mark {
+  inline-size: 0.62rem;
+  block-size: 0.62rem;
+  margin-inline: 0.12rem 0.1rem;
+  rotate: 45deg;
+  background: linear-gradient(135deg, #ffcf5a, var(--saffron) 60%, #d98a00);
+  box-shadow: 0 0 0 1px rgb(120 70 0 / 0.25);
+}
+
+.chai-eyebrow--hero::after {
+  content: '';
+  inline-size: 1.6rem;
+  block-size: 1px;
+  margin-inline-start: 0.5rem;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.chai-headline {
+  /* The packs' Kurdish slogan (right to left) inside the page's own column: it lines up with the page's
+     start edge. */
+  justify-self: start;
+  margin: 0;
+  color: var(--ink);
+  font: 800 clamp(2.2rem, 1.2rem + 3.2vw, 4.6rem) / 1.3 var(--kufi);
+  text-wrap: balance;
+  /* Lines start where the page's column starts (left in English), not where Kurdish lines would. */
+  text-align: match-parent;
+  text-shadow: 0 1px 24px rgb(255 248 232 / 0.6);
+}
+
+.chai-blend-name {
+  margin: -0.2rem 0 0;
+  color: var(--ink);
+  font: 600 clamp(1.45rem, 1rem + 1.6vw, 2.5rem) / 1.1 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+/* A switch: the words fade out as the light starts to turn, and the new blend's come in together. */
+.chai-hero[data-copy='out'] :is(.chai-eyebrow, .chai-blend-name, .chai-lede) {
+  opacity: 0;
+  translate: 0 6px;
+  transition-duration: 0.35s;
+  transition-delay: 0s;
+}
+
+.chai-hero[data-copy='back'] :is(.chai-eyebrow, .chai-blend-name, .chai-lede) {
+  transition-duration: 0.55s;
+  transition-delay: 0s;
+}
+
+/* The blend switch: a swatch of each pack's colour and its name. */
+.chai-blends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.chai-blend {
+  --swatch: var(--heritage);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  min-block-size: 44px;
+  padding: 0.45em 1.05em 0.45em 0.55em;
+  border: 1px solid rgb(22 19 15 / 0.18);
+  border-radius: var(--radius-pill);
+  background: rgb(250 246 238 / 0.8);
+  color: var(--ink);
+  font: 600 0.92rem / 1 var(--body);
+  cursor: pointer;
+  transition:
+    background-color 0.35s var(--ease),
+    border-color 0.35s var(--ease),
+    box-shadow 0.35s var(--ease);
+}
+
+.chai-blend[data-blend='lovely'] {
+  --swatch: var(--lovely);
+}
+
+.chai-blend__swatch {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow:
+    0 0 0 2px rgb(255 255 255 / 0.9),
+    0 0 0 3px rgb(22 19 15 / 0.14);
+}
+
+.chai-blend:hover {
+  border-color: var(--swatch);
+}
+
+.chai-blend[aria-checked='true'] {
+  border-color: var(--swatch);
+  background: rgb(250 246 238 / 0.94);
+  box-shadow: inset 0 0 0 1px var(--swatch);
+}
+
+.chai-lede {
+  max-inline-size: 26rem;
+  margin: 0.2rem 0 0;
+  transition:
+    opacity 0.6s var(--ease-out),
+    translate 0.7s var(--ease-out);
+  color: var(--ink-2);
+  font-size: clamp(1rem, 0.9rem + 0.35vw, 1.22rem);
+  line-height: 1.55;
+}
+
+/* Text sits on bright sky: a soft cream glow keeps it legible wherever the frame is cropped. */
+.chai-hero__copy::before {
+  content: '';
+  position: absolute;
+  inset: -5rem -7rem -4rem -7rem;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgb(255 249 236 / 0.82), rgb(255 249 236 / 0.5) 55%, transparent);
+  filter: blur(14px);
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out);
+}
+
+.chai[data-stage='home'] .chai-hero__copy::before {
+  opacity: 1;
+}
+
+.chai-scroll {
+  position: absolute;
+  inset-block-end: calc(var(--space-5) + var(--safe-bottom));
+  /* In the corner, clear of the pouch on its ledge. */
+  inset-inline-end: var(--pad);
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  inline-size: 4rem;
+  color: var(--cream);
+  font: 600 0.72rem / 1 var(--body);
+  letter-spacing: 0.2em;
+  text-decoration: none;
+  text-transform: uppercase;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+}
+
+.chai-scroll__line {
+  inline-size: 1px;
+  block-size: 40px;
+  background: linear-gradient(to bottom, var(--cream), transparent);
+  animation: chai-cue 2.2s var(--ease) infinite;
+}
+
+@keyframes chai-cue {
+  0% {
+    transform-origin: top;
+    scale: 1 0;
+  }
+  50% {
+    transform-origin: top;
+    scale: 1 1;
+  }
+  51% {
+    transform-origin: bottom;
+  }
+  100% {
+    transform-origin: bottom;
+    scale: 1 0;
+  }
+}
+
+/* ---------- Below the hero (CM-007): the reference's sunlit saffron ---------- */
+/* The photograph melts into the warm saffron of the sections below, as its sunlit haze would (it goes as the
+   shop comes in: the page fades it). */
+.chai-hero__melt {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 1;
+  block-size: 9vh;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--sun-1) 30%, transparent) 60%,
+    var(--sun-1)
+  );
+  pointer-events: none;
+}
+
+.chai-eyebrow--rule::before {
+  display: none;
+}
+
+.chai-eyebrow--rule::after {
+  content: '';
+  inline-size: 4.5rem;
+  block-size: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.chai-h2 {
+  margin: 0;
+  font: 600 clamp(2.2rem, 1.4rem + 3vw, 4rem) / 1.05 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+/* ---------- The pages (CM-014) ----------
+   The homepage (the hero and another flavour), the shop and Our Story are three pages of one site. Each shows
+   only its own parts; the picture is kept (hidden on Our Story), so going back to it is instant. */
+.chai[data-page='shop'] .chai-other,
+.chai:not([data-page='about']) .chai-end,
+.chai[data-page='about'] .chai-main {
+  display: none;
+}
+
+/* Between pages that do not share the picture: a short cross-fade of two still pictures of the page (a view
+   transition: nothing is laid out or painted again while it plays). */
+:root[data-vt='chai']::view-transition-old(root) {
+  animation: chai-vt-out 0.3s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+:root[data-vt='chai']::view-transition-new(root) {
+  animation: chai-vt-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+}
+
+@keyframes chai-vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes chai-vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ---------- The shop (CM-010) ---------- */
+/* The hero and the shop are one shot: the picture stays behind both, and going to the shop (CM-014) the camera
+   moves in, the blend's light comes across and the shop rises over it, in one short move (0 at the hero, 1
+   with the shop in place) played backwards on the way home. The page writes each moving part's opacity and
+   transform itself (CM-011): a variable for it on a parent would restyle every element under it each frame. */
+.chai-journey {
+  position: relative;
+}
+
+/* At the hero the shop is not there at all. */
+.chai-journey[data-shop='off'] .chai-shop {
+  display: none;
+}
+
+/* The shop's colours (CM-010), from Heritage Blend's (--theme 0: gold, cream, olive, tea-brown) to The Lovely
+   Blend's (1: the pack's red, warm cream, burgundy, muted gold). The page moves --theme with the light of a
+   switch, so the shop turns with the scene: on the shop and the light across the picture only (CM-011). */
+.chai-shop,
+.chai-wash {
+  --theme: 0;
+  --shop-accent: color-mix(in oklab, #b98000, #b3272c calc(var(--theme) * 100%));
+  --shop-ink: color-mix(in oklab, #5b6a23, #8e1c22 calc(var(--theme) * 100%));
+  --shop-strong: color-mix(in oklab, #2b3016, #5f151a calc(var(--theme) * 100%));
+  --shop-glow: color-mix(in oklab, #f3b72b, #f0a55f calc(var(--theme) * 100%));
+  --wash-1: color-mix(in oklab, #fbe1a0, #f7dcc6 calc(var(--theme) * 100%));
+  --wash-2: color-mix(in oklab, #f3c24f, #e9a37f calc(var(--theme) * 100%));
+  --card: color-mix(in oklab, #fff8e8, #fff3ec calc(var(--theme) * 100%));
+}
+
+.chai-journey > .chai-hero {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100svh;
+}
+
+/* The hero's words go as the shop comes; once it is in they are out of the way of the pointer and of Tab.
+   Everything the scroll moves is its own layer, moved and faded by the compositor: nothing is painted again
+   while the visitor scrolls (CM-011). */
+.chai-hero__copy,
+.chai-scroll,
+.chai-wash,
+.chai-shop__panel > * {
+  will-change: opacity, transform;
+}
+
+.chai-journey[data-shop='in'] :is(.chai-hero__copy, .chai-scroll) {
+  visibility: hidden;
+}
+
+/* Once the picture has gone up off the screen its slow drifts stop (they start again on the way back). */
+.chai-journey[data-away] :is(.chai-sky, .chai-mist, .chai-leaves__sway, .chai-scroll__line),
+.chai-journey[data-shop='in'] .chai-scroll__line {
+  animation-play-state: paused;
+}
+
+/* The blend's light across the open side (the physical right, as the hero's words: the picture is never
+   mirrored), coming in from there. */
+.chai-wash {
+  position: absolute;
+  /* Only over the side it lights (the rest of it was clear): a smaller layer to put on the screen each frame. */
+  inset: 0 0 0 32%;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    var(--wash-2) 0%,
+    var(--wash-1) 53%,
+    color-mix(in oklab, var(--wash-1) 86%, transparent) 68%,
+    color-mix(in oklab, var(--wash-1) 40%, transparent) 81%,
+    transparent 94%
+  );
+  opacity: 0;
+}
+
+/* The tea: the back canvas in the picture (behind the shop's words and the pack's own box), the front one with
+   the few near pieces, over everything but the header. */
+.chai-rain {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.chai-rain--front {
+  position: fixed;
+  /* Its canvas is drawn from the screen's left edge (the page sets its width), in Kurdish too. */
+  right: auto;
+  left: 0;
+  z-index: 4;
+  inline-size: 100vw;
+  block-size: 100vh;
+}
+
+.chai-shop {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  /* Over the picture, from the top of the page (the picture is pinned behind it). */
+  min-block-size: 100svh;
+  margin-block-start: -100svh;
+  padding: calc(5.4rem + var(--safe-top)) var(--pad) calc(1.5rem + var(--safe-bottom));
+  outline: none;
+}
+
+.chai-shop__view {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  inline-size: 46%;
+  pointer-events: none;
+}
+
+.chai-shop__panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 0.66fr);
+  grid-template-areas:
+    'info info'
+    'options summary'
+    'buy summary';
+  align-content: start;
+  column-gap: clamp(1rem, 0.4rem + 1.4vw, 1.9rem);
+  row-gap: clamp(0.7rem, 0.3rem + 0.7vh, 1.15rem);
+  /* Clear of the pack: it stands in the left part of the picture, a little larger now the camera has moved in. */
+  inline-size: min(52rem, 46vw);
+  margin-left: auto;
+  margin-right: clamp(0rem, 3vw - 1rem, 3rem);
+}
+
+/* Each part rises into the light as the scroll brings it, one after the other (the page moves them). */
+
+.chai-shop__info {
+  grid-area: info;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.chai-shop__options {
+  grid-area: options;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.chai-shop__buy {
+  grid-area: buy;
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+
+.chai-summary {
+  grid-area: summary;
+}
+
+.chai-shop__eyebrow {
+  color: var(--shop-ink);
+}
+
+.chai-shop__eyebrow .chai-eyebrow__mark {
+  background: var(--shop-accent);
+  box-shadow: none;
+}
+
+.chai-shop__name {
+  margin: 0.15rem 0 0;
+  font: 600 clamp(2.1rem, 1.3rem + 2vw, 3.6rem) / 1.04 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.chai-shop__size {
+  margin: 0;
+  color: var(--ink-2);
+  font: 400 1.05rem / 1.3 var(--serif);
+}
+
+.chai-shop__description {
+  max-inline-size: 36rem;
+  margin: 0.2rem 0 0;
+  font: 400 clamp(0.98rem, 0.9rem + 0.25vw, 1.12rem) / 1.6 var(--serif);
+}
+
+/* The pack's facts, each with its line icon, divided by hairlines. */
+.chai-shop__facts {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-shop__facts li {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0.3rem;
+  flex: 1 1 6.5rem;
+  padding: 0.25rem 1rem;
+  border-inline-start: 1px solid rgb(22 19 15 / 0.2);
+  font: 500 0.85rem / 1.3 var(--body);
+}
+
+.chai-shop__facts li:first-child {
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+.chai-shop__facts svg {
+  color: var(--shop-ink);
+}
+
+.chai-shop__label {
+  margin: 0;
+  color: var(--ink);
+  font: 700 0.74rem / 1.2 var(--body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* The blend switch: both packs, and a soft pill that slides to the chosen one. */
+.chai-picks {
+  position: relative;
+  display: inline-grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  justify-self: start;
+  margin-block: 0.25rem 0.1rem;
+  padding: 4px;
+  border: 1px solid rgb(22 19 15 / 0.14);
+  border-radius: var(--radius-pill);
+  background: rgb(255 250 238 / 0.5);
+}
+
+.chai-picks__slide {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-start: 4px;
+  inline-size: calc(50% - 4px);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  box-shadow:
+    0 0 0 1.5px var(--shop-accent),
+    0 6px 16px -6px rgb(60 30 0 / 0.35);
+  translate: calc(var(--i, 0) * 100%) 0;
+  transition: translate 0.55s var(--ease-out);
+}
+
+[dir='rtl'] .chai-picks__slide {
+  translate: calc(var(--i, 0) * -100%) 0;
+}
+
+.chai-pick {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-block-size: 44px;
+  padding: 0.25rem 1.05rem 0.25rem 0.5rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--ink-2);
+  font: 600 0.88rem / 1.1 var(--body);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.3s var(--ease);
+}
+
+[dir='rtl'] .chai-pick {
+  padding: 0.25rem 0.5rem 0.25rem 1.05rem;
+}
+
+.chai-pick img {
+  inline-size: 24px;
+  block-size: auto;
+  filter: drop-shadow(0 3px 3px rgb(40 20 0 / 0.3));
+  transition: transform 0.45s var(--ease-out);
+}
+
+.chai-pick:hover img {
+  transform: translateY(-2px) rotate(-4deg);
+}
+
+.chai-pick[aria-checked='true'] {
+  color: var(--ink);
+}
+
+.chai-pick[aria-checked='true'] img {
+  transform: scale(1.12) rotate(-5deg);
+}
+
+/* The two ways to buy: cards with a check that fills (not only a colour). */
+.chai-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: 0.7rem;
+}
+
+.chai-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: 4.5rem;
+  padding: 0.7rem 2.2rem 0.7rem 0.9rem;
+  border: 1.5px solid rgb(22 19 15 / 0.14);
+  border-radius: 16px;
+  background: rgb(255 250 240 / 0.55);
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 0.3s var(--ease),
+    background-color 0.3s var(--ease),
+    box-shadow 0.35s var(--ease),
+    translate 0.25s var(--ease-out),
+    scale 0.15s var(--ease);
+}
+
+[dir='rtl'] .chai-option {
+  padding: 0.7rem 0.9rem 0.7rem 2.2rem;
+}
+
+.chai-option:hover {
+  border-color: color-mix(in oklab, var(--shop-accent) 60%, transparent);
+  translate: 0 -2px;
+}
+
+.chai-option:active {
+  scale: 0.985;
+}
+
+.chai-option[aria-checked='true'] {
+  border-color: var(--shop-accent);
+  background: var(--card);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--shop-accent) 20%, transparent),
+    0 12px 26px -14px rgb(60 30 0 / 0.4);
+}
+
+.chai-option__icon {
+  color: var(--shop-ink);
+}
+
+.chai-option__text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.chai-option__name {
+  font: 600 0.98rem / 1.2 var(--body);
+}
+
+.chai-option__detail {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.chai-option__total {
+  margin-block-start: 0.15rem;
+  font: 600 0.86rem / 1.3 var(--body);
+}
+
+.chai-option__check {
+  position: absolute;
+  inset-block-start: 0.65rem;
+  inset-inline-end: 0.65rem;
+  display: grid;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 1.5px solid rgb(22 19 15 / 0.3);
+  border-radius: 50%;
+  color: transparent;
+  transition:
+    background-color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    color 0.2s var(--ease);
+}
+
+.chai-option[aria-checked='true'] .chai-option__check {
+  border-color: var(--shop-accent);
+  background: var(--shop-accent);
+  color: #fffaf0;
+  animation: chai-pop 0.4s var(--ease-out);
+}
+
+@keyframes chai-pop {
+  from {
+    scale: 0.4;
+  }
+  60% {
+    scale: 1.15;
+  }
+}
+
+/* How many: a stepper; the number gives a little bump as it changes. */
+.chai-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 3px;
+  border: 1px solid rgb(22 19 15 / 0.14);
+  border-radius: var(--radius-pill);
+  background: rgb(255 250 240 / 0.6);
+}
+
+.chai-qty__step {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease),
+    scale 0.15s var(--ease);
+}
+
+.chai-qty__step:hover {
+  background: color-mix(in oklab, var(--shop-accent) 16%, transparent);
+}
+
+.chai-qty__step:active {
+  scale: 0.88;
+}
+
+.chai-qty__step[aria-disabled='true'] {
+  opacity: 0.32;
+  cursor: default;
+  background: none;
+  scale: 1;
+}
+
+.chai-qty__n {
+  min-inline-size: 2.6rem;
+  font: 600 1.05rem / 1 var(--body);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.chai-qty__n span,
+.chai-summary dd,
+.chai-summary__total strong {
+  display: inline-block;
+  animation: chai-bump 0.34s var(--ease-out);
+}
+
+@keyframes chai-bump {
+  from {
+    opacity: 0.35;
+    scale: 1.16;
+  }
+}
+
+/* The order button, in the blend's deepest colour. Ordering is not open yet: it says so, and pressing it says
+   nothing was ordered (the cart gives a small shake). */
+.chai-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  justify-self: stretch;
+  min-block-size: 54px;
+  margin-block-start: 0.35rem;
+  padding: 0.6rem 1.6rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--shop-strong);
+  color: #fbf3e2;
+  font: 600 1.02rem / 1.2 var(--body);
+  cursor: pointer;
+  box-shadow: 0 14px 28px -14px color-mix(in oklab, var(--shop-strong) 80%, transparent);
+  transition:
+    translate 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease),
+    scale 0.15s var(--ease);
+}
+
+.chai-order:hover {
+  translate: 0 -2px;
+  box-shadow: 0 18px 32px -14px color-mix(in oklab, var(--shop-strong) 85%, transparent);
+}
+
+.chai-order:active {
+  scale: 0.985;
+}
+
+.chai-order .chai-arrow {
+  transition: translate 0.3s var(--ease-out);
+}
+
+.chai-order:hover .chai-arrow {
+  translate: 3px 0;
+}
+
+[dir='rtl'] .chai-order:hover .chai-arrow {
+  translate: -3px 0;
+}
+
+.chai-order__icon {
+  color: var(--shop-glow);
+}
+
+.chai-order[data-noted] .chai-order__icon {
+  animation: chai-shake 0.5s var(--ease);
+}
+
+@keyframes chai-shake {
+  25% {
+    rotate: -12deg;
+  }
+  55% {
+    rotate: 9deg;
+  }
+  80% {
+    rotate: -4deg;
+  }
+}
+
+.chai-order__note {
+  min-block-size: 1.3em;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.chai-order__note[data-on] {
+  animation: chai-rise 0.45s var(--ease-out);
+}
+
+/* What it comes to: a card in the light. */
+.chai-summary {
+  align-self: start;
+  padding: 1.15rem 1.25rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.55);
+  border-radius: 20px;
+  background: color-mix(in oklab, var(--card) 84%, transparent);
+  box-shadow: 0 22px 44px -24px rgb(70 35 0 / 0.45);
+}
+
+.chai-summary__title {
+  margin: 0 0 0.8rem;
+  font: 600 1.2rem / 1.2 var(--serif);
+}
+
+.chai-summary__rows {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.chai-summary__rows > div,
+.chai-summary__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chai-summary dt {
+  color: var(--ink-2);
+  font-size: 0.86rem;
+}
+
+.chai-summary dd {
+  margin: 0;
+  font: 600 0.88rem / 1.3 var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.chai-summary__total {
+  margin-block-start: 0.95rem;
+  padding-block-start: 0.9rem;
+  border-block-start: 1px solid rgb(22 19 15 / 0.14);
+  font: 500 1.08rem / 1.2 var(--serif);
+}
+
+.chai-summary__total {
+  flex-wrap: wrap;
+  row-gap: 0.2rem;
+}
+
+.chai-summary__total strong {
+  margin-inline-start: auto;
+  white-space: nowrap;
+  font: 600 clamp(1.2rem, 1rem + 0.4vw, 1.4rem) / 1.1 var(--serif);
+  font-variant-numeric: tabular-nums;
+}
+
+.chai-summary__note {
+  margin: 0.35rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.76rem;
+}
+
+/* The shop's words change as the hero's do: out while the light starts to turn, back with the new blend. */
+.chai-shop[data-copy='out']
+  :is(.chai-shop__name, .chai-shop__size, .chai-shop__description, .chai-shop__facts) {
+  opacity: 0;
+  translate: 0 6px;
+  transition:
+    opacity 0.35s var(--ease),
+    translate 0.35s var(--ease);
+}
+
+.chai-shop[data-copy='back']
+  :is(.chai-shop__name, .chai-shop__size, .chai-shop__description, .chai-shop__facts) {
+  transition:
+    opacity 0.55s var(--ease-out),
+    translate 0.6s var(--ease-out);
+}
+
+/* A narrower landscape screen: the shop takes a little more of it. */
+@media (max-width: 1180px) and (min-width: 901px) {
+  .chai-shop__panel {
+    inline-size: min(56rem, 57vw);
+    grid-template-columns: minmax(0, 1fr) minmax(12.5rem, 0.6fr);
+  }
+}
+
+/* A phone or a tablet held upright: the pack on its rock first, then the shop on a card of the blend's light
+   that rises over the picture. */
+@media (max-width: 900px) {
+  .chai-shop {
+    padding: 0 0 calc(1.25rem + var(--safe-bottom));
+  }
+  .chai-shop__view {
+    position: static;
+    inline-size: auto;
+    block-size: 74svh;
+  }
+  .chai-shop__panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'info' 'options' 'summary' 'buy';
+    inline-size: auto;
+    margin: 0 max(0.75rem, var(--pad) - 0.5rem);
+    padding: 1.4rem clamp(1rem, 4vw, 1.75rem) 1.25rem;
+    border: 1px solid rgb(255 255 255 / 0.5);
+    border-radius: 26px;
+    background: linear-gradient(180deg, var(--wash-1), color-mix(in oklab, var(--wash-2) 88%, var(--wash-1)));
+    box-shadow: 0 -18px 50px -30px rgb(40 20 0 / 0.5);
+  }
+  .chai-wash {
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      var(--wash-2),
+      color-mix(in oklab, var(--wash-1) 70%, transparent) 26%,
+      transparent 48%
+    );
+    transform: none;
+  }
+  .chai-shop__facts li {
+    flex-basis: 40%;
+    padding-block: 0.5rem;
+  }
+  .chai-shop__facts li:nth-child(odd) {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+  .chai-summary {
+    background: color-mix(in oklab, var(--card) 92%, transparent);
+  }
+}
+
+/* ---------- Another flavour ---------- */
+.chai-other {
+  /* It comes up over the bottom of the pinned picture, which melts into its saffron as it goes (CM-010). */
+  --melt: 18vh;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  min-block-size: calc(min(52rem, 100svh) + var(--melt));
+  margin-block-start: calc(var(--melt) * -1);
+  padding: calc(clamp(3rem, 2rem + 5vw, 7rem) + var(--melt)) var(--pad) clamp(5rem, 4rem + 4vw, 8rem);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--sun-3) 55%, transparent) calc(var(--melt) * 0.55),
+    var(--sun-3) var(--melt),
+    var(--sun-2) 50%,
+    var(--sun-1)
+  );
+  /* Its melt lies over the bottom of the hero (the blend switch on a phone, the scroll cue): taps go through it
+     to them (CM-014: the hero is right above it now). */
+  pointer-events: none;
+}
+
+.chai-other > * {
+  pointer-events: auto;
+}
+
+/* The photograph's country on the start side, in this blend's light, melting into the saffron. */
+.chai-other__land {
+  position: absolute;
+  inset: var(--melt) 0 0;
+  inset-inline-end: 38%;
+  -webkit-mask: linear-gradient(to var(--toward-end, right), #000 45%, transparent);
+  mask: linear-gradient(to var(--toward-end, right), #000 45%, transparent);
+}
+
+[dir='rtl'] .chai-other__land {
+  --toward-end: left;
+}
+
+.chai-other__plate {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: 45% 30%;
+  opacity: 0.85;
+  transition: opacity 1.2s var(--ease-time);
+}
+
+.chai-other[data-time='day'] .chai-other__plate--dusk,
+.chai-other[data-time='dusk'] .chai-other__plate--day {
+  opacity: 0;
+}
+
+.chai-other__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1.5rem, 1rem + 3vw, 4rem);
+  max-inline-size: 76rem;
+  min-block-size: 32rem;
+  margin-inline: auto;
+}
+
+.chai-other__pack {
+  display: grid;
+  margin: 0;
+}
+
+.chai-other__img {
+  grid-area: 1 / 1;
+  justify-self: center;
+  inline-size: min(100%, 20rem);
+  block-size: auto;
+  opacity: 0;
+  translate: 0 12px;
+  filter: drop-shadow(0 30px 30px rgb(40 20 0 / 0.35));
+  transition:
+    opacity 0.7s var(--ease-out),
+    translate 0.9s var(--ease-out);
+}
+
+.chai-other__img[data-on] {
+  opacity: 1;
+  translate: none;
+}
+
+.chai-other__copy {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.chai-other__copy > .chai-h2,
+.chai-other__lede {
+  animation: chai-rise 0.7s var(--ease-out) both;
+}
+
+.chai-other__lede {
+  max-inline-size: 30rem;
+  margin: 0;
+  font: 400 clamp(1rem, 0.95rem + 0.25vw, 1.15rem) / 1.6 var(--serif);
+}
+
+@keyframes chai-rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+.chai-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-block-size: 48px;
+  margin-block-start: 0.4rem;
+  padding: 0.6em 1.5em;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--cream);
+  font: 600 0.98rem / 1 var(--body);
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease),
+    translate 0.3s var(--ease-out);
+}
+
+.chai-cta:hover {
+  background: #2a2219;
+  translate: 0 -1px;
+}
+
+[dir='rtl'] .chai-arrow {
+  scale: -1 1;
+}
+
+.chai-other__picker {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chai-thumb {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 500 0.85rem / 1.2 var(--serif);
+  cursor: pointer;
+}
+
+.chai-thumb__ring {
+  display: grid;
+  place-items: center;
+  inline-size: 6.5rem;
+  block-size: 6.5rem;
+  border: 1px solid rgb(22 19 15 / 0.18);
+  border-radius: 50%;
+  background: rgb(255 246 220 / 0.55);
+  transition:
+    border-color 0.3s var(--ease),
+    box-shadow 0.3s var(--ease);
+}
+
+.chai-thumb__ring img {
+  inline-size: 3.2rem;
+  block-size: auto;
+  filter: drop-shadow(0 6px 6px rgb(40 20 0 / 0.25));
+}
+
+.chai-thumb[aria-pressed='true'] .chai-thumb__ring {
+  border-color: var(--heritage-ink, #b27200);
+  box-shadow: inset 0 0 0 1px var(--heritage-ink, #b27200);
+}
+
+.chai-thumb[data-blend='lovely'][aria-pressed='true'] .chai-thumb__ring {
+  border-color: var(--lovely);
+  box-shadow: inset 0 0 0 1px var(--lovely);
+}
+
+.chai-thumb[data-blend='lovely'][aria-pressed='true'] .chai-thumb__name {
+  color: #8f1216; /* the pack's red, deep enough to read on the saffron */
+}
+
+.chai-thumb__next {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 1px solid rgb(22 19 15 / 0.2);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.chai-other__mascot {
+  position: absolute;
+  inset-inline-end: clamp(1rem, 4vw, 4rem);
+  inset-block-end: clamp(2.5rem, 4vw, 4rem);
+  z-index: 1;
+  inline-size: clamp(5.5rem, 4rem + 5vw, 9rem);
+  block-size: auto;
+  opacity: 0.92;
+}
+
+.chai-other__scroll {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 1.6rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  inline-size: max-content;
+  margin-inline: auto;
+  color: var(--ink);
+  font: 600 0.7rem / 1 var(--body);
+  letter-spacing: 0.24em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+/* ---------- The end: Our Story, Connect, the footer (CM-011) ---------- */
+/* On the pack's ink, warmed by a still glow of its saffron and red (a gradient, never a blur filter). Each part
+   rises in once as it first comes into view (About.tsx sets data-rise="in"). */
+.chai-end {
+  --ink-bg: #14100c;
+  --ink-fg: #f6eedd;
+  --ink-muted: rgb(246 238 221 / 0.66);
+  --ink-line: rgb(246 238 221 / 0.12);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  /* Its own page (CM-014): the ink from the top, at least a screen of it. */
+  min-block-size: 100svh;
+  background: var(--ink-bg);
+  color: var(--ink-fg);
+}
+
+[data-rise] {
+  opacity: 0;
+  transform: translate3d(0, 1.6rem, 0);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 1s var(--ease-out);
+}
+
+[data-rise='in'] {
+  opacity: 1;
+  transform: none;
+}
+
+.chai-story {
+  position: relative;
+  display: grid;
+  gap: clamp(4rem, 3rem + 5vw, 8rem);
+  padding: clamp(8rem, 6rem + 6vw, 12rem) var(--pad) clamp(4rem, 3rem + 4vw, 7rem);
+  outline: none;
+}
+
+.chai-story__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 26rem at 50% 12rem, rgb(254 165 0 / 0.16), transparent 70%),
+    radial-gradient(36rem 24rem at 85% 55%, rgb(198 32 38 / 0.1), transparent 70%),
+    radial-gradient(30rem 22rem at 10% 80%, rgb(254 165 0 / 0.07), transparent 70%);
+}
+
+/* A fine grid in the ink, fading out at the top and bottom. */
+.chai-story::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(246 238 221 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(246 238 221 / 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  mask: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+}
+
+.chai-story > * {
+  position: relative;
+}
+
+.chai-story__head {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.chai-story__brand {
+  margin: 0;
+  color: var(--saffron);
+  font: 800 1.05rem / 1 var(--kufi);
+}
+
+.chai-story__title {
+  margin: 0;
+  font: 600 clamp(3rem, 1.8rem + 6vw, 7.5rem) / 0.95 var(--serif);
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #fff6e2 30%, #d9b98a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.chai-story__lede {
+  max-inline-size: 34rem;
+  margin: 0;
+  color: var(--ink-muted);
+  font: italic 400 clamp(1.1rem, 0.95rem + 0.6vw, 1.5rem) / 1.5 var(--serif);
+}
+
+/* About: Mama's seal and his name beside the story. */
+.chai-story__about {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: clamp(2.5rem, 1rem + 6vw, 7rem);
+  inline-size: min(100%, 72rem);
+  margin-inline: auto;
+}
+
+.chai-story__seal {
+  display: grid;
+  justify-items: center;
+  gap: 1.4rem;
+  margin: 0;
+}
+
+.chai-story__seal img {
+  inline-size: min(100%, 19rem);
+  block-size: auto;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow:
+    0 0 0 2px var(--saffron),
+    0 0 0 12px rgb(246 238 221 / 0.06),
+    0 0 0 13px rgb(246 238 221 / 0.16),
+    0 30px 80px -20px rgb(254 165 0 / 0.35);
+}
+
+.chai-story__seal figcaption {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+}
+
+.chai-story__word {
+  color: var(--saffron);
+  font: 800 clamp(2.4rem, 1.8rem + 2vw, 3.6rem) / 1.2 var(--kufi);
+}
+
+.chai-story__meaning {
+  color: var(--ink-muted);
+  font: italic 400 1rem / 1.4 var(--serif);
+}
+
+.chai-story__copy {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.chai-story__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0;
+  color: var(--saffron);
+  font: 700 0.78rem / 1.2 var(--body);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.chai-story__eyebrow::after {
+  content: '';
+  inline-size: 3rem;
+  block-size: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.chai-story__h3 {
+  margin: 0;
+  font: 600 clamp(2.2rem, 1.5rem + 2.6vw, 3.8rem) / 1.05 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.chai-story__p {
+  max-inline-size: 38rem;
+  margin: 0;
+  color: var(--ink-muted);
+  font: 400 clamp(1rem, 0.94rem + 0.25vw, 1.15rem) / 1.75 var(--body);
+}
+
+.chai-story__p--first {
+  color: var(--ink-fg);
+  font: 400 clamp(1.12rem, 1rem + 0.45vw, 1.38rem) / 1.6 var(--serif);
+}
+
+/* How it's made: three steps on a line, and the promise under them. */
+.chai-story__process {
+  display: grid;
+  gap: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+  inline-size: min(100%, 72rem);
+  margin-inline: auto;
+}
+
+.chai-story__process-head {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.chai-story__process-head .chai-story__eyebrow::before {
+  content: '';
+  inline-size: 3rem;
+  block-size: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.chai-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 0.5rem + 1.5vw, 2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The line the three steps stand on. */
+.chai-steps::before {
+  content: '';
+  position: absolute;
+  inset-inline: 8%;
+  inset-block-start: 3.1rem;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, rgb(254 165 0 / 0.45), transparent);
+}
+
+.chai-step {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 0.7rem;
+  padding: 1.6rem 1.5rem 1.7rem;
+  border: 1px solid var(--ink-line);
+  border-radius: 22px;
+  /* Solid (the ink lifted a little), so the line they stand on passes behind them. */
+  background: linear-gradient(180deg, #221c16, #19140f);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 1s var(--ease-out),
+    border-color 0.4s var(--ease);
+}
+
+.chai-step:hover {
+  border-color: rgb(254 165 0 / 0.45);
+}
+
+.chai-step__n {
+  color: transparent;
+  font: 700 clamp(2.6rem, 2rem + 2vw, 3.6rem) / 1 var(--serif);
+  -webkit-text-stroke: 1px rgb(254 165 0 / 0.75);
+}
+
+.chai:lang(ckb) .chai-step__n {
+  font-family: var(--kufi);
+  font-weight: 800;
+}
+
+.chai-step__icon {
+  position: absolute;
+  inset-block-start: 1.6rem;
+  inset-inline-end: 1.5rem;
+  color: var(--saffron);
+}
+
+.chai-step__title {
+  margin: 0.3rem 0 0;
+  font: 600 1.45rem / 1.2 var(--serif);
+}
+
+.chai-step__body {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.chai-story__close {
+  margin: 0;
+  color: var(--ink-fg);
+  font: italic 500 clamp(1.5rem, 1.1rem + 1.6vw, 2.6rem) / 1.2 var(--serif);
+  text-align: center;
+}
+
+.chai-story__close::first-line {
+  color: var(--saffron);
+}
+
+/* Connect: no channels exist yet, and it says so plainly. */
+.chai-connect {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  inline-size: min(calc(100% - 2 * var(--pad)), 56rem);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 2rem + 3vw, 4.5rem) var(--pad);
+  border: 1px solid var(--ink-line);
+  border-radius: 28px;
+  background: rgb(246 238 221 / 0.04);
+  text-align: center;
+  outline: none;
+}
+
+.chai-connect__line {
+  max-inline-size: 32rem;
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.chai-connect__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-block-start: 0.5rem;
+}
+
+.chai-cta--light {
+  background: var(--saffron);
+  color: var(--ink);
+}
+
+.chai-cta--light:hover {
+  background: #ffb52e;
+}
+
+.chai-cta--ghost {
+  border: 1px solid rgb(246 238 221 / 0.3);
+  background: transparent;
+  color: var(--ink-fg);
+}
+
+.chai-cta--ghost:hover {
+  border-color: var(--saffron);
+  background: rgb(254 165 0 / 0.12);
+}
+
+/* The footer: the giant word, outlined in the ink, the line and the way back up. */
+.chai-foot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  min-block-size: clamp(14rem, 10rem + 14vw, 24rem);
+  margin-block-start: clamp(3rem, 2rem + 3vw, 5rem);
+  padding: 0 var(--pad) calc(1.6rem + var(--safe-bottom));
+  overflow: hidden;
+}
+
+.chai-foot__giant {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -0.12em;
+  color: transparent;
+  font: 900 clamp(4.5rem, 1rem + 17vw, 20rem) / 0.8 var(--body);
+  letter-spacing: -0.04em;
+  text-align: center;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgb(246 238 221 / 0.1);
+  background: linear-gradient(180deg, rgb(246 238 221 / 0.12), transparent 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+  user-select: none;
+}
+
+.chai:lang(ckb) .chai-foot__giant {
+  font-family: var(--kufi);
+  letter-spacing: 0;
+}
+
+.chai-foot__top {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 48px;
+  block-size: 48px;
+  padding: 0;
+  border: 1px solid rgb(246 238 221 / 0.25);
+  border-radius: 50%;
+  background: rgb(20 16 12 / 0.6);
+  color: var(--ink-fg);
+  cursor: pointer;
+  transition:
+    border-color 0.3s var(--ease),
+    transform 0.3s var(--ease-out);
+}
+
+.chai-foot__top:hover {
+  border-color: var(--saffron);
+  transform: translateY(-3px);
+}
+
+.chai-end :focus-visible {
+  outline-color: var(--saffron);
+}
+
+/* ---------- Kurdish ---------- */
+.chai:lang(ckb) :is(.chai-blend-name, .chai-h2) {
+  font-family: var(--kufi);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.chai:lang(ckb)
+  :is(
+    .chai-eyebrow,
+    .chai-scroll,
+    .chai-other__scroll,
+    .chai-nav__link,
+    .chai-lang__option,
+    .chai-shop__label
+  ) {
+  font-family: var(--kufi);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.chai:lang(ckb)
+  :is(
+    .chai-lede,
+    .chai-blend,
+    .chai-shop__description,
+    .chai-shop__size,
+    .chai-pick,
+    .chai-option,
+    .chai-order,
+    .chai-summary,
+    .chai-other__lede,
+    .chai-cta,
+    .chai-thumb,
+    .chai-story__p,
+    .chai-step__body,
+    .chai-connect__line
+  ),
+.chai:lang(ckb) .chai-shop__facts li {
+  font-family: 'Vazirmatn Variable', Tahoma, sans-serif;
+  line-height: 1.9;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 720px) {
+  /* The headline, the blend and its words at the top; the switch on the ledge below the pouch, so the pack
+     in the middle stays clear. */
+  .chai-hero__copy {
+    inset-block: calc(4.7rem + var(--safe-top)) calc(1.4rem + var(--safe-bottom));
+    inset-inline: var(--pad);
+    max-inline-size: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    text-align: center;
+    pointer-events: none;
+  }
+  .chai-hero__copy::before {
+    inset: -3rem -2rem auto;
+    block-size: 15rem;
+  }
+  .chai-headline {
+    align-self: center;
+    font-size: clamp(1.45rem, 0.9rem + 3.3vw, 2.2rem);
+    line-height: 1.5;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .chai-blend-name {
+    font-size: 1.3rem;
+  }
+  .chai-hero__choose {
+    display: contents;
+  }
+  .chai-lede {
+    max-inline-size: 22rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    text-shadow: 0 0 12px rgb(255 249 236 / 0.9);
+  }
+  .chai-blends {
+    flex-wrap: nowrap;
+    justify-content: center;
+    margin-block-start: auto;
+    pointer-events: auto;
+  }
+  .chai-blend {
+    padding-inline-end: 0.85em;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+  .chai-scroll {
+    display: none;
+  }
+  /* The language goes into the menu; the logo keeps its name. */
+  .chai-lang {
+    display: none;
+  }
+  .chai-brand__mark {
+    inline-size: 38px;
+    block-size: 38px;
+  }
+  .chai-story__about {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+  .chai-story__copy {
+    justify-items: center;
+  }
+  .chai-story__seal img {
+    inline-size: min(58%, 13rem);
+  }
+  .chai-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chai-steps::before {
+    display: none;
+  }
+  .chai-foot {
+    flex-direction: column-reverse;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.2rem;
+    padding-block-start: 2rem;
+  }
+  /* Another flavour: the country above, the pack standing in it, the words and the blends below. */
+  .chai-other__land {
+    inset: var(--melt) 0 52% 0;
+    -webkit-mask: linear-gradient(to bottom, #000 55%, transparent);
+    mask: linear-gradient(to bottom, #000 55%, transparent);
+  }
+  .chai-other__inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    min-block-size: 0;
+  }
+  .chai-other__img {
+    inline-size: min(56%, 13rem);
+  }
+  .chai-other__copy {
+    justify-items: center;
+  }
+  .chai-other__mascot {
+    display: none;
+  }
+  .chai-thumb__ring {
+    inline-size: 5.2rem;
+    block-size: 5.2rem;
+  }
+}
+
+@media (pointer: coarse) {
+  .chai-pill {
+    min-block-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chai-other__copy > .chai-h2,
+  .chai-other__lede,
+  .chai-mist,
+  .chai-scroll__line,
+  .chai-sky,
+  .chai-leaves,
+  .chai-leaves__sway,
+  .chai-option__check,
+  .chai-qty__n span,
+  .chai-summary dd,
+  .chai-summary__total strong,
+  .chai-order__icon,
+  .chai-order__note {
+    animation: none !important;
+  }
+  /* Our Story comes in by fading only; nothing slides (the shop's parts: the page keeps them still). */
+  [data-rise] {
+    transform: none;
+  }
+  .chai-picks__slide {
+    transition: none;
+  }
+  .chai-option:hover,
+  .chai-order:hover {
+    translate: none;
+  }
+  /* A switch is a short, even fade (the page runs it so: no travel, no drift, no edge across the pack). */
+  .chai-pouch--lovely {
+    -webkit-mask: none;
+    mask: none;
+    opacity: var(--reveal, 0);
+  }
+  .chai-hero[data-switching] .chai-mist--a {
+    animation: none;
+  }
+}
