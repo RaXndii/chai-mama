@@ -1,5 +1,32 @@
 # Decisions
 
+## CM-017 · 2026-11-24 · the iPhone's whole screen, and the teas under the hero
+
+The owner, on an iPhone: the browser's grey bars above and below interrupted the site ("it should feel like you
+enter the Chai Mama website"); scrolling down should show the teas — Heritage Blend first, then The Lovely Blend —
+with their descriptions and ingredients (screenshots of the owner's own product cards); and the phone's sizes were
+a little large.
+
+- **The page scrolls, not a box inside it.** The site was one fixed full-screen box scrolling inside itself, so
+  Safari drew its bars over plain background. Now the document scrolls: Safari draws the site under its bars and
+  tucks them away as you scroll. What shows above the page (the status bar, a pull past the top) is the colour of
+  the picture's sky for the blend's time of day, or the ink on Our Story; the browser's own colour
+  (`theme-color`) follows. During the opening cloud nothing scrolls.
+- **Saved to the home screen** it opens full screen like an app, with the Chai Mama icon (`manifest.webmanifest`,
+  `apple-touch-icon.png`, the Apple web-app meta).
+- **The teas** take the place of "another flavour": "Our blends", a card for each — the pack on a glow of its
+  colour; Flagship · Flavoured Blend / Unflavoured Blend; the owner's description; what is in it; **Buy now —
+  3,000 IQD** in the blend's colour, which chooses that blend and opens the shop. The ingredients are the
+  owner's list (Ceylon Black Tea, Cornflower, Rose Petals, Crushed Cardamom, Earl Grey; The Lovely Blend: Ceylon
+  Black Tea), each on a round chip of its own colour that pops in after its card: the Ceylon tea is real tea cut
+  from the owner's photo; the others are drawn in the page (the owner's ingredient photos were only screenshots,
+  too small to be sharp on a phone). The section ends with a link on to Our Story.
+- **Smaller on phones:** the logo, the slogan and the blend's name, the switch (48 px), Shop now (54 px), the menu's
+  glass (44 px).
+- New words (Kurdish for the owner to check): "Flagship" «بەرهەمی سەرەکی», "Flavoured Blend" «تێکەڵەی بەتام»,
+  "Unflavoured Blend" «تێکەڵەی بێ بۆن», "What's inside" «پێکهاتەکان», "Buy now" «ئێستا بکڕە». The ingredient names
+  in Kurdish are the ones already in the shop's description.
+
 ## CM-016 · 2026-11-24 · the phone's hero after the owner's picture, and a menu of glass
 
 The owner sent a picture of how the homepage should look on a phone, and a short video of a glass button that

@@ -14,9 +14,16 @@ export const BLENDS: readonly BlendId[] = ['heritage', 'lovely'];
 /** The line icons beside a blend's facts (drawn in the page, CM-007). */
 export type FactIcon = 'leaf' | 'citrus' | 'pod' | 'flower' | 'cup' | 'plain';
 
+/** What is in the teas (the owner's list, CM-017). */
+export type IngredientId = 'ceylon' | 'cornflower' | 'rose' | 'cardamom' | 'earlgrey';
+
 export interface ChaiBlend {
   /** As on the pack, e.g. "Heritage Blend". */
   name: string;
+  /** "Flavoured Blend", "Unflavoured Blend". */
+  kind: string;
+  /** What is in it, in the owner's order. */
+  ingredients: readonly { id: IngredientId; name: string }[];
   /** "200g pouch". */
   size: string;
   /** The hero's line under the headline. */
@@ -94,8 +101,8 @@ export interface ChaiMamaContent {
     cta: string;
     ctaNote: string;
   };
-  /** The section after the tea (CM-007): the other blend, in its own light. */
-  other: { eyebrow: string; explore: string; blends: string; next: string; scroll: string };
+  /** The teas, under the hero (CM-017): each blend, what is in it, and a way to buy it. */
+  teas: { title: string; flagship: string; inside: string; buy: string };
   /**
    * About (CM-011): the owner's own words about the brand and how its tea is made (2026-10-22). It takes the
    * place of CM-007's curtain footer at the end of the page.
@@ -153,6 +160,14 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
     blends: {
       heritage: {
         name: 'Heritage Blend',
+        kind: 'Flavoured Blend',
+        ingredients: [
+          { id: 'ceylon', name: 'Ceylon Black Tea' },
+          { id: 'cornflower', name: 'Cornflower' },
+          { id: 'rose', name: 'Rose Petals' },
+          { id: 'cardamom', name: 'Crushed Cardamom' },
+          { id: 'earlgrey', name: 'Earl Grey' },
+        ],
         size: '200g pouch',
         lede: 'A balanced family recipe with black tea, cardamom, and rose petals — made for a consistent cup, every time.',
         description:
@@ -170,6 +185,8 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       },
       lovely: {
         name: 'The Lovely Blend',
+        kind: 'Unflavoured Blend',
+        ingredients: [{ id: 'ceylon', name: 'Ceylon Black Tea' }],
         size: '200g pouch',
         lede: 'Pure Ceylon black tea only — the same quality base as our Heritage Blend, without the added flowers, cardamom, or earl grey. Simple, bold, and reliable.',
         description:
@@ -212,12 +229,11 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       cta: 'Ordering opens soon',
       ctaNote: 'Ordering on the site isn’t open yet, so nothing has been ordered.',
     },
-    other: {
-      eyebrow: 'Another flavour',
-      explore: 'Explore this flavour',
-      blends: 'Our blends',
-      next: 'Next blend',
-      scroll: 'Scroll to discover more',
+    teas: {
+      title: 'Our blends',
+      flagship: 'Flagship',
+      inside: "What's inside",
+      buy: 'Buy now',
     },
     about: {
       title: 'Our Story',
@@ -279,6 +295,14 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
     blends: {
       heritage: {
         name: 'تێکەڵەی ڕەسەن',
+        kind: 'تێکەڵەی بەتام',
+        ingredients: [
+          { id: 'ceylon', name: 'چای ڕەشی سیلۆنی' },
+          { id: 'cornflower', name: 'گوڵەگەنمە' },
+          { id: 'rose', name: 'پەڕەی گوڵ' },
+          { id: 'cardamom', name: 'هێلی کوتراو' },
+          { id: 'earlgrey', name: 'ئێرڵ گرێی' },
+        ],
         size: 'پاکەتی ٢٠٠ گرامی',
         lede: 'ڕەچەتەیەکی خێزانیی هاوسەنگ لە چای ڕەش، هێل و پەڕەی گوڵ — بۆ پەرداخێکی هەمیشە یەکسان.',
         description:
@@ -296,6 +320,8 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       },
       lovely: {
         name: 'تێکەڵە حەیاتەکە',
+        kind: 'تێکەڵەی بێ بۆن',
+        ingredients: [{ id: 'ceylon', name: 'چای ڕەشی سیلۆنی' }],
         size: 'پاکەتی ٢٠٠ گرامی',
         lede: 'تەنها چای ڕەشی سیلۆنیی پاک — هەمان بنەمای کوالیتیی تێکەڵەی ڕەسەن، بەبێ گوڵ، هێل یان ئێرڵ گرێی. سادە، بەهێز و جێی متمانە.',
         description:
@@ -338,12 +364,11 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       cta: 'داواکردن بەم زووانە دەکرێتەوە',
       ctaNote: 'داواکردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە هیچ داواکارییەک نەکرا.',
     },
-    other: {
-      eyebrow: 'تامێکی تر',
-      explore: 'ئەم تامە ببینە',
-      blends: 'تێکەڵەکانمان',
-      next: 'تێکەڵەی دواتر',
-      scroll: 'بۆ زیاتر سکڕۆڵ بکە',
+    teas: {
+      title: 'تێکەڵەکانمان',
+      flagship: 'بەرهەمی سەرەکی',
+      inside: 'پێکهاتەکان',
+      buy: 'ئێستا بکڕە',
     },
     about: {
       title: 'چیرۆکی ئێمە',

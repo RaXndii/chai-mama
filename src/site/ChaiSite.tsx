@@ -16,11 +16,7 @@ import { navigate, usePage } from '@/app/router';
 import { chaimama as copy, useLocale } from '@/content';
 import { BLENDS, type BlendId } from '@/content/chaimama';
 import { LOCALES } from '@/content/types';
-import mascotUrl from '../brand/mascot.webp';
-import packLovelyUrl from '../brand/pack-lovely.webp';
-import pouchUrl from '../brand/pouch.webp';
 import teaLeavesUrl from '../brand/tea-leaves.webp';
-import { chai } from '../brand/tokens';
 import { ARRIVAL, ARRIVAL_CALM, CLOUD_VEIL } from '../entrance';
 import { pathOf, type ChaiPage } from '../routes';
 import {
@@ -44,6 +40,7 @@ import ChaiNav from './ChaiNav';
 import { Arrow } from './icons';
 import { NAV_PAGE, type NavSection } from './nav';
 import Shop from './Shop';
+import Teas from './Teas';
 import { startTeaRain, type TeaRain } from './teaRain';
 import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
 import './chai.css';
@@ -100,9 +97,6 @@ function clarityOn(): boolean {
   );
 }
 
-const otherBlend = (b: BlendId): BlendId => (b === 'heritage' ? 'lovely' : 'heritage');
-const packOf = (b: BlendId) => (b === 'lovely' ? packLovelyUrl : pouchUrl);
-
 /** The window of clarity's radius on screen (CSS px). */
 const CLEAR_R = 320;
 
@@ -127,21 +121,19 @@ if (typeof window !== 'undefined') {
     new Image().src = src;
 }
 
-function useHead() {
+/** The browser's colour around the page (Chrome's bar, a phone's status bar): the sky of the picture for its time
+ *  of day, the ink on Our Story — as html's background (base.css). */
+const SKY_DAY = '#9fa8b8';
+const SKY_DUSK = '#a9968b';
+const INK = '#14100c';
+
+function useHead(color: string) {
   useEffect(() => {
-    const prev = document.title;
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    const prevDesc = meta?.content;
-    const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    const prevTheme = theme?.content;
     document.title = copy.meta.title;
-    if (meta) meta.content = copy.meta.description;
-    if (theme) theme.content = chai.leafDeep;
-    return () => {
-      document.title = prev;
-      if (meta && prevDesc !== undefined) meta.content = prevDesc;
-      if (theme && prevTheme !== undefined) theme.content = prevTheme;
-    };
+    document
+      .querySelector<HTMLMetaElement>('meta[name="description"]')
+      ?.setAttribute('content', copy.meta.description);
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', color);
   });
 }
 
@@ -176,7 +168,6 @@ export default function ChaiSite() {
   const [size, setSize] = useState<Size>(() =>
     pickSize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1),
   );
-  useHead();
 
   // The blend: `blend` is the visitor's choice (the switch shows it at once) and where the scene's time of day
   // is heading; `shown` is the blend whose words are on the page — it follows a moment later, while the words
@@ -201,9 +192,6 @@ export default function ChaiSite() {
   const copyTimer = useRef(0);
   // The section after the tea shows the other blend; the visitor can look at either there, until the hero's
   // blend changes again.
-  const [pick, setPick] = useState<{ under: BlendId; id: BlendId } | null>(null);
-  const featured = pick?.under === blend ? pick.id : otherBlend(blend);
-  const setFeatured = (id: BlendId) => setPick({ under: blend, id });
 
   useEffect(() => {
     const onResize = () =>
@@ -436,14 +424,13 @@ export default function ChaiSite() {
       to.a = 0;
       kick();
     };
-    const root = rootEl.current;
     window.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerout', onOut);
-    root?.addEventListener('scroll', kick, { passive: true });
+    window.addEventListener('scroll', kick, { passive: true });
     return () => {
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerout', onOut);
-      root?.removeEventListener('scroll', kick);
+      window.removeEventListener('scroll', kick);
       cancelAnimationFrame(raf);
     };
   }, [stage, clarity]);
@@ -461,9 +448,7 @@ export default function ChaiSite() {
    * Our Story. A scroll frame reads nothing but the scroll position (the hero's height is measured on resize).
    */
   const sync = () => {
-    const root = rootEl.current;
-    if (!root) return;
-    const top = root.scrollTop;
+    const top = window.scrollY;
     const vh = window.innerHeight;
     const pg = pageRef.current;
     const isScrolled = pg !== 'home' || top > vh * 0.6;
@@ -487,8 +472,6 @@ export default function ChaiSite() {
     });
   };
   useEffect(() => {
-    const root = rootEl.current;
-    if (!root) return;
     let raf = 0;
     const onScroll = () => {
       if (!raf)
@@ -501,11 +484,11 @@ export default function ChaiSite() {
       heroH.current = heroEl.current?.offsetHeight ?? window.innerHeight;
       onScroll();
     };
-    root.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', relayout);
     relayout();
     return () => {
-      root.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', relayout);
       cancelAnimationFrame(raf);
     };
@@ -611,7 +594,7 @@ export default function ChaiSite() {
     prevPage.current = page;
     const root = rootEl.current;
     const moved = prev !== null && prev !== page;
-    if (moved && root) root.scrollTop = 0;
+    if (moved) window.scrollTo({ top: 0, behavior: 'instant' });
     const glide =
       moved &&
       !faded.current &&
@@ -743,7 +726,7 @@ export default function ChaiSite() {
   };
 
   const scrollBehavior = (): ScrollBehavior => (qualityStore.getState().reducedMotion ? 'auto' : 'smooth');
-  const toTop = () => rootEl.current?.scrollTo({ top: 0, behavior: scrollBehavior() });
+  const toTop = () => window.scrollTo({ top: 0, behavior: scrollBehavior() });
   /** Scroll to a part of the page shown, focus with it. */
   const toPart = (id: string) => {
     const el = rootEl.current?.querySelector<HTMLElement>(`#${id}`);
@@ -765,7 +748,7 @@ export default function ChaiSite() {
     }
     pendingPart.current = part ?? null;
     const go = () => navigate(to);
-    const atHero = (rootEl.current?.scrollTop ?? 0) < window.innerHeight * 0.3;
+    const atHero = window.scrollY < window.innerHeight * 0.3;
     const glides = atHero && (to === 'shop' || to === 'home') && pageRef.current !== 'about';
     const fade =
       !glides &&
@@ -783,23 +766,14 @@ export default function ChaiSite() {
   };
   /** The nav: to a page, in the site (no reload); Connect is Our Story's last part. */
   const goTo = (id: NavSection) => goPage(NAV_PAGE[id], id === 'chai-connect' ? id : undefined);
-  /** Show a blend in the hero: back up to it first, so the change of light is seen. */
-  const explore = (id: BlendId) => {
-    const root = rootEl.current;
-    if (!root || root.scrollTop < 40) return choose(id);
-    toTop();
-    let done = false;
-    const go = () => {
-      if (done) return;
-      done = true;
-      root.removeEventListener('scrollend', go);
-      choose(id);
-    };
-    root.addEventListener('scrollend', go);
-    timers.current.push(window.setTimeout(go, 1200));
+  /** Buy a blend from its card: it is chosen (the scene and the shop turn to it) and the shop opens. */
+  const buy = (id: BlendId) => {
+    choose(id);
+    goPage('shop');
   };
   const copyState = shown !== blend ? 'out' : shown === initialBlendRef.current && !switched ? 'in' : 'back';
   const time = timeOf(blend);
+  useHead(page === 'about' ? INK : time === 'dusk' ? SKY_DUSK : SKY_DAY);
   const b = copy.blends[shown];
   const first = (t: 'day' | 'dusk') => (t === timeOf(initialBlendRef.current) ? { 'data-first': '' } : {});
   /**
@@ -1000,10 +974,10 @@ export default function ChaiSite() {
             <a
               ref={cueEl}
               className="chai-scroll"
-              href="#chai-other"
+              href="#chai-teas"
               onClick={(e) => {
                 e.preventDefault();
-                toPart('chai-other');
+                toPart('chai-teas');
               }}
             >
               <span>{copy.hero.scroll}</span>
@@ -1023,106 +997,8 @@ export default function ChaiSite() {
           />
         </div>
 
-        <section
-          id="chai-other"
-          className="chai-other"
-          aria-labelledby="chai-other-title"
-          tabIndex={-1}
-          data-blend={featured}
-          data-time={timeOf(featured)}
-          data-testid="chai-other"
-        >
-          {/* The same country, in the light that goes with this blend. */}
-          <div className="chai-other__land" aria-hidden="true">
-            {(['day', 'dusk'] as const).map((t) => (
-              <img
-                key={t}
-                className={`chai-other__plate chai-other__plate--${t}`}
-                src={PLATES.far[t].small}
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            ))}
-          </div>
-          <div className="chai-other__inner">
-            <figure className="chai-other__pack">
-              {BLENDS.map((id) => (
-                <img
-                  key={id}
-                  className="chai-other__img"
-                  data-on={id === featured || undefined}
-                  src={packOf(id)}
-                  alt={id === featured ? copy.blends[id].packAlt : ''}
-                  width={id === 'lovely' ? 706 : 720}
-                  height={996}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ))}
-            </figure>
-            <div className="chai-other__copy">
-              <p className="chai-eyebrow chai-eyebrow--rule">{copy.other.eyebrow}</p>
-              <h2 id="chai-other-title" className="chai-h2" key={featured}>
-                {copy.blends[featured].name}
-              </h2>
-              <p className="chai-other__lede" key={`${featured}-lede`}>
-                {copy.blends[featured].lede}
-              </p>
-              <button type="button" className="chai-cta" onClick={() => explore(featured)}>
-                <span>{copy.other.explore}</span>
-                <Arrow />
-              </button>
-            </div>
-            <div className="chai-other__picker" role="group" aria-label={copy.other.blends}>
-              {BLENDS.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  className="chai-thumb"
-                  data-blend={id}
-                  aria-pressed={id === featured}
-                  onClick={() => setFeatured(id)}
-                >
-                  <span className="chai-thumb__ring">
-                    <img src={packOf(id)} alt="" width={72} height={100} loading="lazy" decoding="async" />
-                  </span>
-                  <span className="chai-thumb__name">{copy.blends[id].name}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className="chai-thumb__next"
-                aria-label={copy.other.next}
-                onClick={() => setFeatured(otherBlend(featured))}
-              >
-                <Arrow />
-              </button>
-            </div>
-          </div>
-          <img
-            className="chai-other__mascot"
-            src={mascotUrl}
-            alt={copy.product.mascotAlt}
-            width={632}
-            height={640}
-            loading="lazy"
-            decoding="async"
-          />
-          {/* On to Our Story, its own page. */}
-          <a
-            className="chai-other__scroll"
-            href={pathOf('about')}
-            onClick={(e) => {
-              if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-              e.preventDefault();
-              goPage('about');
-            }}
-          >
-            <span>{copy.about.title}</span>
-            <Arrow />
-          </a>
-        </section>
+        {/* The teas: each blend, what is in it, and Buy now (CM-017). */}
+        <Teas lang={lang} onBuy={buy} onStory={() => goPage('about')} />
       </main>
 
       {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}

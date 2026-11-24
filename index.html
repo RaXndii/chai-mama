@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#2b3a1c" />
+    <meta name="theme-color" content="#9fa8b8" />
+    <!-- Saved to a phone's home screen it opens full screen, like an app. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chai Mama" />
     <title>Chai Mama — black tea: Heritage Blend and The Lovely Blend</title>
     <meta
       name="description"
@@ -14,11 +21,12 @@
     <meta property="og:description" content="Heritage Blend and The Lovely Blend: Chai Mama black tea." />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <style>
-      /* The mist the page opens in, before the script: never a white or black flash. */
-      html,
+      /* The sky the page opens under, before the script: never a white or black flash. */
+      html {
+        background: #9fa8b8;
+      }
       body {
         margin: 0;
-        background: #dfe5e7;
       }
     </style>
   </head>

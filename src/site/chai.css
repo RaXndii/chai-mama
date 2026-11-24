@@ -27,21 +27,19 @@
   --heritage-ink: #a86a00;
   --pad: clamp(1.25rem, 0.6rem + 3vw, 4rem);
 
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-site);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* The page itself scrolls (not a box inside it): on an iPhone Safari then draws the site under its bars and
+     tucks them away as the visitor scrolls, so nothing grey frames the page. */
+  position: relative;
+  min-block-size: 100svh;
+  overflow-x: clip;
   color: var(--ink);
   font-family: var(--body);
   line-height: 1.6;
   transition: opacity 0.42s var(--ease);
 }
 
-/* In the gate's cloud and during the arrival nothing scrolls; in the cloud nothing takes a click. */
-.chai[data-stage='cloud'],
-.chai[data-stage='arriving'] {
+/* In the opening cloud and during the arrival nothing scrolls; in the cloud nothing takes a click. */
+html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   overflow: hidden;
 }
 
@@ -1151,7 +1149,6 @@
 /* ---------- The pages (CM-014) ----------
    The homepage (the hero and another flavour), the shop and Our Story are three pages of one site. Each shows
    only its own parts; the picture is kept (hidden on Our Story), so going back to it is instant. */
-.chai[data-page='shop'] .chai-other,
 .chai:not([data-page='about']) .chai-end,
 .chai[data-page='about'] .chai-main {
   display: none;
@@ -1853,114 +1850,6 @@
   }
 }
 
-/* ---------- Another flavour ---------- */
-.chai-other {
-  /* It comes up over the bottom of the pinned picture, which melts into its saffron as it goes (CM-010). */
-  --melt: 18vh;
-  position: relative;
-  z-index: 2;
-  overflow: hidden;
-  min-block-size: calc(min(52rem, 100svh) + var(--melt));
-  margin-block-start: calc(var(--melt) * -1);
-  padding: calc(clamp(3rem, 2rem + 5vw, 7rem) + var(--melt)) var(--pad) clamp(5rem, 4rem + 4vw, 8rem);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in srgb, var(--sun-3) 55%, transparent) calc(var(--melt) * 0.55),
-    var(--sun-3) var(--melt),
-    var(--sun-2) 50%,
-    var(--sun-1)
-  );
-  /* Its melt lies over the bottom of the hero (the blend switch on a phone, the scroll cue): taps go through it
-     to them (CM-014: the hero is right above it now). */
-  pointer-events: none;
-}
-
-.chai-other > * {
-  pointer-events: auto;
-}
-
-/* The photograph's country on the start side, in this blend's light, melting into the saffron. */
-.chai-other__land {
-  position: absolute;
-  inset: var(--melt) 0 0;
-  inset-inline-end: 38%;
-  -webkit-mask: linear-gradient(to var(--toward-end, right), #000 45%, transparent);
-  mask: linear-gradient(to var(--toward-end, right), #000 45%, transparent);
-}
-
-[dir='rtl'] .chai-other__land {
-  --toward-end: left;
-}
-
-.chai-other__plate {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  object-position: 45% 30%;
-  opacity: 0.85;
-  transition: opacity 1.2s var(--ease-time);
-}
-
-.chai-other[data-time='day'] .chai-other__plate--dusk,
-.chai-other[data-time='dusk'] .chai-other__plate--day {
-  opacity: 0;
-}
-
-.chai-other__inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: clamp(1.5rem, 1rem + 3vw, 4rem);
-  max-inline-size: 76rem;
-  min-block-size: 32rem;
-  margin-inline: auto;
-}
-
-.chai-other__pack {
-  display: grid;
-  margin: 0;
-}
-
-.chai-other__img {
-  grid-area: 1 / 1;
-  justify-self: center;
-  inline-size: min(100%, 20rem);
-  block-size: auto;
-  opacity: 0;
-  translate: 0 12px;
-  filter: drop-shadow(0 30px 30px rgb(40 20 0 / 0.35));
-  transition:
-    opacity 0.7s var(--ease-out),
-    translate 0.9s var(--ease-out);
-}
-
-.chai-other__img[data-on] {
-  opacity: 1;
-  translate: none;
-}
-
-.chai-other__copy {
-  display: grid;
-  gap: 1rem;
-  justify-items: start;
-}
-
-.chai-other__copy > .chai-h2,
-.chai-other__lede {
-  animation: chai-rise 0.7s var(--ease-out) both;
-}
-
-.chai-other__lede {
-  max-inline-size: 30rem;
-  margin: 0;
-  font: 400 clamp(1rem, 0.95rem + 0.25vw, 1.15rem) / 1.6 var(--serif);
-}
-
 @keyframes chai-rise {
   from {
     opacity: 0;
@@ -1995,95 +1884,280 @@
   scale: -1 1;
 }
 
-.chai-other__picker {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+/* ---------- The teas (CM-017) ----------
+   Under the hero, on the saffron its picture melts into: a card for each blend — the pack on a glow of its
+   colour, what kind of blend it is, the owner's words, what is in it (each ingredient on its own chip) and Buy
+   now in the blend's colour. Each card rises in as it comes into view, its ingredients one after another. */
+.chai[data-page='shop'] .chai-teas {
+  display: none;
 }
 
-.chai-thumb {
+.chai-teas {
+  position: relative;
+  z-index: 2;
   display: grid;
   justify-items: center;
-  gap: 0.6rem;
-  padding: 0;
-  border: 0;
-  background: none;
+  gap: clamp(1.25rem, 1rem + 1.5vw, 2.25rem);
+  padding: clamp(2.5rem, 2rem + 3vw, 5rem) var(--pad) clamp(2rem, 1.6rem + 2vw, 3.5rem);
+  background: linear-gradient(180deg, var(--sun-1), var(--sun-2) 35%, var(--sun-3));
+  outline: none;
+}
+
+.chai-teas__title {
+  margin: 0;
   color: var(--ink);
-  font: 500 0.85rem / 1.2 var(--serif);
-  cursor: pointer;
+  font: 600 clamp(1.7rem, 1.2rem + 2vw, 3rem) / 1.1 var(--serif);
+  letter-spacing: -0.01em;
+  text-align: center;
 }
 
-.chai-thumb__ring {
+.chai-teas__list {
   display: grid;
-  place-items: center;
-  inline-size: 6.5rem;
-  block-size: 6.5rem;
-  border: 1px solid rgb(22 19 15 / 0.18);
-  border-radius: 50%;
-  background: rgb(255 246 220 / 0.55);
-  transition:
-    border-color 0.3s var(--ease),
-    box-shadow 0.3s var(--ease);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: clamp(1rem, 0.8rem + 1vw, 1.75rem);
+  inline-size: min(100%, 64rem);
 }
 
-.chai-thumb__ring img {
-  inline-size: 3.2rem;
-  block-size: auto;
-  filter: drop-shadow(0 6px 6px rgb(40 20 0 / 0.25));
-}
-
-.chai-thumb[aria-pressed='true'] .chai-thumb__ring {
-  border-color: var(--heritage-ink, #b27200);
-  box-shadow: inset 0 0 0 1px var(--heritage-ink, #b27200);
-}
-
-.chai-thumb[data-blend='lovely'][aria-pressed='true'] .chai-thumb__ring {
-  border-color: var(--lovely);
-  box-shadow: inset 0 0 0 1px var(--lovely);
-}
-
-.chai-thumb[data-blend='lovely'][aria-pressed='true'] .chai-thumb__name {
-  color: #8f1216; /* the pack's red, deep enough to read on the saffron */
-}
-
-.chai-thumb__next {
+.chai-tea {
+  --tint-ink: #8a5a00;
+  --tint-soft: #ffdf9a;
+  --buy-bg: var(--saffron);
+  --buy-fg: var(--ink);
+  --buy-glow: rgb(200 120 0 / 0.6);
   display: grid;
-  place-items: center;
-  inline-size: 44px;
-  block-size: 44px;
-  padding: 0;
-  border: 1px solid rgb(22 19 15 / 0.2);
-  border-radius: 50%;
-  background: none;
-  color: var(--ink);
-  cursor: pointer;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border-radius: 26px;
+  background: #fffaf1;
+  box-shadow:
+    0 26px 50px -32px rgb(80 40 0 / 0.6),
+    0 0 0 1px rgb(120 70 0 / 0.08);
 }
 
-.chai-other__mascot {
-  position: absolute;
-  inset-inline-end: clamp(1rem, 4vw, 4rem);
-  inset-block-end: clamp(2.5rem, 4vw, 4rem);
-  z-index: 1;
-  inline-size: clamp(5.5rem, 4rem + 5vw, 9rem);
-  block-size: auto;
-  opacity: 0.92;
+.chai-tea[data-blend='lovely'] {
+  --tint-ink: #a3161c;
+  --tint-soft: #f7c3b6;
+  --buy-bg: var(--lovely);
+  --buy-fg: #fff7ee;
+  --buy-glow: rgb(160 20 30 / 0.55);
 }
 
-.chai-other__scroll {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 1.6rem;
-  z-index: 1;
+.chai-tea__stage {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  inline-size: max-content;
-  margin-inline: auto;
+  justify-content: center;
+  block-size: clamp(13rem, 10rem + 10vw, 17rem);
+  overflow: hidden;
+  background:
+    radial-gradient(55% 65% at 50% 60%, var(--tint-soft), transparent 72%),
+    linear-gradient(180deg, #fbf3e3, #f5e9d3);
+}
+
+/* The pack's shadow where it stands. */
+.chai-tea__stage::after {
+  content: '';
+  position: absolute;
+  inset-block-end: 7%;
+  inline-size: 44%;
+  block-size: 9%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(60 30 0 / 0.3), transparent);
+}
+
+.chai-tea__pack {
+  position: relative;
+  z-index: 1;
+  inline-size: auto;
+  block-size: 86%;
+  max-inline-size: none;
+  margin-block-start: -4%;
+  filter: drop-shadow(0 14px 14px rgb(60 30 0 / 0.22));
+  transition:
+    translate 0.5s var(--ease-out),
+    rotate 0.5s var(--ease-out);
+}
+
+.chai-tea:hover .chai-tea__pack {
+  translate: 0 -6px;
+  rotate: -2deg;
+}
+
+.chai-tea__body {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  padding: 1.2rem clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem) 1.5rem;
+}
+
+.chai-tea__tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: rgb(22 19 15 / 0.58);
+  font: 700 0.72rem / 1 var(--body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chai-tea__flag {
+  color: var(--tint-ink);
+}
+
+.chai-tea__flag::after {
+  content: '·';
+  margin-inline-start: 0.5rem;
+  color: rgb(22 19 15 / 0.4);
+}
+
+.chai-tea__name {
+  margin: 0;
   color: var(--ink);
-  font: 600 0.7rem / 1 var(--body);
-  letter-spacing: 0.24em;
+  font: 600 clamp(1.45rem, 1.2rem + 1vw, 2rem) / 1.1 var(--serif);
+}
+
+.chai-tea__description {
+  margin: 0;
+  color: rgb(22 19 15 / 0.74);
+  font: 400 0.95rem / 1.55 var(--body);
+}
+
+/* What is in it: each ingredient on a round chip of its own colour, its name under it. */
+.chai-tea__inside {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.1rem, 1fr));
+  gap: 0.8rem 0.4rem;
+  margin: 0.4rem 0 0.2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-ing {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.chai-tea[data-rise] .chai-ing {
+  opacity: 0;
+  translate: 0 10px;
+  transition:
+    opacity 0.45s var(--ease-out),
+    translate 0.6s cubic-bezier(0.3, 1.45, 0.5, 1);
+  transition-delay: calc(0.3s + var(--i) * 80ms);
+}
+
+.chai-tea[data-rise='in'] .chai-ing {
+  opacity: 1;
+  translate: none;
+}
+
+.chai-ing__chip {
+  --chip: #efe2cf;
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0, var(--chip) 60%);
+  box-shadow:
+    inset 0 0 0 1px rgb(22 19 15 / 0.07),
+    inset 0 2px 0 rgb(255 255 255 / 0.85),
+    0 8px 16px -10px rgb(60 30 0 / 0.5);
+  transition: translate 0.35s var(--ease-out);
+}
+
+.chai-ing:hover .chai-ing__chip {
+  translate: 0 -3px;
+}
+
+.chai-ing__chip svg {
+  inline-size: 78%;
+  block-size: 78%;
+}
+
+.chai-ing__chip[data-ing='cornflower'] {
+  --chip: #dfe7fb;
+}
+
+.chai-ing__chip[data-ing='rose'] {
+  --chip: #fbdfe6;
+}
+
+.chai-ing__chip[data-ing='cardamom'] {
+  --chip: #e6efd3;
+}
+
+.chai-ing__chip[data-ing='earlgrey'] {
+  --chip: #fbefc6;
+}
+
+.chai-ing__leaf {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+.chai-ing__name {
+  color: rgb(22 19 15 / 0.75);
+  font: 600 0.68rem / 1.25 var(--body);
+}
+
+.chai-tea__buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 0.6rem;
+  min-block-size: 50px;
+  margin-block-start: 0.5rem;
+  padding: 0.65em 1.4em;
+  border-radius: 14px;
+  background: var(--buy-bg);
+  color: var(--buy-fg);
+  font: 700 1rem / 1 var(--body);
+  text-decoration: none;
+  box-shadow: 0 12px 22px -12px var(--buy-glow);
+  transition:
+    translate 0.3s var(--ease-out),
+    filter 0.3s var(--ease);
+}
+
+.chai-tea__buy:hover {
+  translate: 0 -1px;
+  filter: brightness(1.06);
+}
+
+.chai-teas__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-block: 0.8rem;
+  color: var(--ink);
+  font: 700 0.78rem / 1 var(--body);
+  letter-spacing: 0.2em;
   text-decoration: none;
   text-transform: uppercase;
+}
+
+.chai:lang(ckb) :is(.chai-tea__tag, .chai-teas__more) {
+  font-family: var(--kufi);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.chai:lang(ckb) :is(.chai-tea__description, .chai-ing__name, .chai-tea__buy) {
+  font-family: 'Vazirmatn Variable', Tahoma, sans-serif;
+}
+
+.chai:lang(ckb) :is(.chai-tea__name, .chai-teas__title) {
+  font-family: var(--kufi);
+  font-weight: 700;
 }
 
 /* ---------- The end: Our Story, Connect, the footer (CM-011) ---------- */
@@ -2492,15 +2566,7 @@
   letter-spacing: 0;
 }
 
-.chai:lang(ckb)
-  :is(
-    .chai-eyebrow,
-    .chai-scroll,
-    .chai-other__scroll,
-    .chai-nav__link,
-    .chai-lang__option,
-    .chai-shop__label
-  ) {
+.chai:lang(ckb) :is(.chai-eyebrow, .chai-scroll, .chai-nav__link, .chai-lang__option, .chai-shop__label) {
   font-family: var(--kufi);
   letter-spacing: 0;
   text-transform: none;
@@ -2516,9 +2582,7 @@
     .chai-option,
     .chai-order,
     .chai-summary,
-    .chai-other__lede,
     .chai-cta,
-    .chai-thumb,
     .chai-story__p,
     .chai-step__body,
     .chai-connect__line
@@ -2549,13 +2613,13 @@
   }
   .chai-headline {
     align-self: center;
-    font-size: clamp(1.45rem, 0.9rem + 3.3vw, 2.2rem);
+    font-size: clamp(1.35rem, 0.8rem + 3.2vw, 2rem);
     line-height: 1.5;
     white-space: nowrap;
     text-align: center;
   }
   .chai-blend-name {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
   .chai-hero__choose {
     display: contents;
@@ -2579,7 +2643,7 @@
     flex: 1 1 0;
     justify-content: center;
     min-inline-size: 0;
-    min-block-size: 52px;
+    min-block-size: 48px;
     padding: 0.5em 0.8em 0.5em 0.55em;
     border-color: rgb(22 19 15 / 0.12);
     background: rgb(250 246 238 / 0.96);
@@ -2595,33 +2659,49 @@
     inline-size: 1.35rem;
     block-size: 1.35rem;
   }
-  /* The section below starts under the hero instead of melting up over its bottom, where the switch and Shop
-     now are (the hero is sticky, so nothing in it can be lifted above that melt); the hero's own melt makes
-     the join. */
-  .chai-other {
-    --melt: 0px;
-  }
-  .chai-hero__melt {
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      color-mix(in srgb, var(--sun-3) 30%, transparent) 60%,
-      var(--sun-3)
-    );
-  }
   .chai-buy {
     align-self: stretch;
-    min-block-size: 60px;
-    margin-block-start: 0.85rem;
-    font-size: 1.4rem;
+    min-block-size: 54px;
+    margin-block-start: 0.75rem;
+    font-size: 1.25rem;
     pointer-events: auto;
   }
   .chai-scroll {
     display: none;
   }
   .chai-brand__mark {
-    inline-size: 38px;
-    block-size: 38px;
+    inline-size: 34px;
+    block-size: 34px;
+  }
+  .chai-brand__name {
+    font-size: 1.1rem;
+  }
+  .chai-dock {
+    --size: 44px;
+  }
+  /* The teas: a little tighter on a phone. */
+  .chai-tea__stage {
+    block-size: 12rem;
+  }
+  .chai-tea__body {
+    padding: 1rem 1.1rem 1.25rem;
+  }
+  .chai-tea__description {
+    font-size: 0.9rem;
+  }
+  .chai-tea__inside {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.7rem 0.3rem;
+  }
+  .chai-ing__chip {
+    inline-size: 3rem;
+    block-size: 3rem;
+  }
+  .chai-ing__name {
+    font-size: 0.62rem;
+  }
+  .chai-tea__buy {
+    justify-self: stretch;
   }
   .chai-story__about {
     grid-template-columns: minmax(0, 1fr);
@@ -2647,31 +2727,6 @@
     gap: 1.2rem;
     padding-block-start: 2rem;
   }
-  /* Another flavour: the country above, the pack standing in it, the words and the blends below. */
-  .chai-other__land {
-    inset: var(--melt) 0 52% 0;
-    -webkit-mask: linear-gradient(to bottom, #000 55%, transparent);
-    mask: linear-gradient(to bottom, #000 55%, transparent);
-  }
-  .chai-other__inner {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-    min-block-size: 0;
-  }
-  .chai-other__img {
-    inline-size: min(56%, 13rem);
-  }
-  .chai-other__copy {
-    justify-items: center;
-  }
-  .chai-other__mascot {
-    display: none;
-  }
-  .chai-thumb__ring {
-    inline-size: 5.2rem;
-    block-size: 5.2rem;
-  }
 }
 
 @media (pointer: coarse) {
@@ -2681,8 +2736,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chai-other__copy > .chai-h2,
-  .chai-other__lede,
   .chai-mist,
   .chai-scroll__line,
   .chai-sky,

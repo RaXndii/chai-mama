@@ -27,7 +27,21 @@ html {
 html,
 body {
   margin: 0;
-  background: #dfe5e7;
+}
+
+/* What shows above and below the page (an iPhone's status bar, a pull past the top or the end): the colour of
+   the picture's sky for its time of day, and the ink on Our Story. */
+html {
+  background: #9fa8b8;
+  transition: background-color 0.6s ease;
+}
+
+html:has(.chai-hero[data-time='dusk']) {
+  background: #a9968b;
+}
+
+html:has(.chai[data-page='about']) {
+  background: #14100c;
 }
 
 body {

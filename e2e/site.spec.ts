@@ -64,7 +64,8 @@ const reveal = (page: Page) =>
   page
     .locator('.chai-layer--pouch')
     .evaluate((el) => Number((el as HTMLElement).style.getPropertyValue('--reveal')));
-const scrollTop = (page: Page) => page.evaluate(() => document.querySelector('.chai')!.scrollTop);
+/** The page's own scroll (the document scrolls, so an iPhone's bars tuck away). */
+const scrollTop = (page: Page) => page.evaluate(() => window.scrollY);
 
 test.describe('Chai Mama — the opening', () => {
   test('it opens in a cloud that clears onto the picture, and has no detectable WCAG A/AA violations', async ({
@@ -324,27 +325,47 @@ test.describe('Chai Mama — two blends, one place', () => {
     ).toHaveCount(0);
   });
 
-  test('another flavour below: the other blend, either at a tap, and Explore shows it in the hero', async ({
+  test('the teas below the hero: Heritage first, then The Lovely Blend — what each is, what is in it, Buy now', async ({
     page,
   }) => {
     const errors = consoleErrors(page);
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    const other = page.getByTestId('chai-other');
-    const title = other.getByRole('heading', { level: 2 });
-    await other.scrollIntoViewIfNeeded();
-    await expect(title).toHaveText('The Lovely Blend');
-    await other.getByRole('button', { name: 'Heritage Blend' }).click();
-    await expect(title).toHaveText('Heritage Blend');
-    await other.getByRole('button', { name: 'Next blend' }).click();
-    await expect(title).toHaveText('The Lovely Blend');
-    await other.getByRole('button', { name: 'Explore this flavour' }).click();
-    // Back up to the hero, where the time of day turns…
-    await expect.poll(() => page.evaluate(() => document.querySelector('.chai')!.scrollTop)).toBeLessThan(5);
-    await expect(radio(page, 'The Lovely Blend')).toHaveAttribute('aria-checked', 'true');
+    const teas = page.getByTestId('chai-teas');
+    await teas.scrollIntoViewIfNeeded();
+    await expect(teas.getByRole('heading', { level: 2, name: 'Our blends' })).toBeVisible();
+    const cards = teas.getByRole('article');
+    await expect(cards).toHaveCount(2);
+    // The owner's order, words and price.
+    const heritage = page.getByTestId('chai-tea-heritage');
+    const lovely = page.getByTestId('chai-tea-lovely');
+    await expect(cards.first()).toHaveAttribute('data-blend', 'heritage');
+    await expect(heritage.getByRole('heading', { level: 3 })).toHaveText('Heritage Blend');
+    await expect(heritage.locator('.chai-tea__tag')).toHaveText(/Flagship.*Flavoured Blend/);
+    await expect(heritage.getByText(/Our signature family recipe/)).toBeVisible();
+    await expect(heritage.getByRole('list', { name: "What's inside" }).getByRole('listitem')).toHaveText([
+      'Ceylon Black Tea',
+      'Cornflower',
+      'Rose Petals',
+      'Crushed Cardamom',
+      'Earl Grey',
+    ]);
+    await expect(lovely.locator('.chai-tea__tag')).toHaveText('Unflavoured Blend');
+    await expect(lovely.getByRole('listitem')).toHaveText(['Ceylon Black Tea']);
+    await expect(heritage.getByTestId('chai-buy-heritage')).toHaveText(/Buy now — 3,000 IQD/);
+    // Each card rises in, its ingredients after it.
+    await expect(heritage).toHaveAttribute('data-rise', 'in');
+    await lovely.scrollIntoViewIfNeeded();
+    await expect(lovely).toHaveAttribute('data-rise', 'in');
+    // Buy now: The Lovely Blend chosen, in the shop.
+    await lovely.getByTestId('chai-buy-lovely').click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(shop(page).getByTestId('chai-shop-name')).toHaveText('The Lovely Blend');
+    await expect(shop(page).getByRole('radio', { name: 'The Lovely Blend' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await expect(hero(page)).toHaveAttribute('data-time', 'dusk');
-    // …and below, the other blend is now the earlier one.
-    await expect(title).toHaveText('Heritage Blend');
     expect(errors).toEqual([]);
   });
 
@@ -359,8 +380,8 @@ test.describe('Chai Mama — two blends, one place', () => {
     const about = page.locator('#chai-about');
     await expect(about).toBeHidden();
     // From the end of the homepage, on to it.
-    await page.getByTestId('chai-other').scrollIntoViewIfNeeded();
-    await page.getByTestId('chai-other').getByRole('link', { name: 'Our Story' }).click();
+    await page.getByTestId('chai-teas').scrollIntoViewIfNeeded();
+    await page.getByTestId('chai-teas').getByRole('link', { name: 'Our Story' }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect(site(page)).toHaveAttribute('data-page', 'about');
     await expect(hero(page)).toBeHidden();
@@ -379,8 +400,7 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(site(page)).toHaveAttribute('data-end', 'true');
     // Connect and the footer; back to the top from there.
     await page.evaluate(() => {
-      const root = document.querySelector('.chai')!;
-      root.scrollTo({ top: root.scrollHeight, behavior: 'instant' });
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
     });
     const footer = page.getByRole('contentinfo', { name: 'Chai Mama' });
     await expect(page.locator('#chai-connect').getByRole('button', { name: 'کوردی' })).toBeVisible();
@@ -529,7 +549,7 @@ test.describe('Chai Mama — two blends, one place', () => {
     const buy = page.getByTestId('chai-buy');
     await expect(buy).toBeVisible();
     const buyBottom = (await buy.boundingBox())!.y + (await buy.boundingBox())!.height;
-    const otherTop = (await page.getByTestId('chai-other').boundingBox())!.y;
+    const otherTop = (await page.getByTestId('chai-teas').boundingBox())!.y;
     expect(otherTop).toBeGreaterThanOrEqual(buyBottom);
     expect(await buy.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(36, 26, 19)');
     // Shop now: to the shop, with the camera's move.
@@ -657,10 +677,9 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
     await expect.poll(() => pieces(page, BACK), { timeout: 10_000 }).toBeGreaterThan(10);
     // Below the picture the tea is on the front canvas, over the sections.
-    await page.getByTestId('chai-other').scrollIntoViewIfNeeded();
+    await page.getByTestId('chai-teas').scrollIntoViewIfNeeded();
     await page.evaluate(() => {
-      const root = document.querySelector('.chai')!;
-      root.scrollBy({ top: innerHeight * 0.6, behavior: 'instant' });
+      window.scrollBy({ top: innerHeight * 0.6, behavior: 'instant' });
     });
     await expect.poll(() => pieces(page, FRONT), { timeout: 10_000 }).toBeGreaterThan(8);
     // And over Our Story, on its page.

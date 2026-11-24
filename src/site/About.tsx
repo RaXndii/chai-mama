@@ -48,7 +48,7 @@ export default function About({ lang, onTop }: Props) {
           io.unobserve(e.target);
         }
       },
-      { root: el.closest('.chai'), rootMargin: '0px 0px -12% 0px' },
+      { rootMargin: '0px 0px -12% 0px' },
     );
     for (const p of parts) io.observe(p);
     return () => io.disconnect();
