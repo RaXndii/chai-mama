@@ -18,9 +18,8 @@ a little large.
   colour; Flagship · Flavoured Blend / Unflavoured Blend; the owner's description; what is in it; **Buy now —
   3,000 IQD** in the blend's colour, which chooses that blend and opens the shop. The ingredients are the
   owner's list (Ceylon Black Tea, Cornflower, Rose Petals, Crushed Cardamom, Earl Grey; The Lovely Blend: Ceylon
-  Black Tea), each on a round chip of its own colour that pops in after its card: the Ceylon tea is real tea cut
-  from the owner's photo; the others are drawn in the page (the owner's ingredient photos were only screenshots,
-  too small to be sharp on a phone). The section ends with a link on to Our Story.
+  Black Tea), each on a round chip that pops in after its card: the owner's own photographs of each ingredient (sent
+  2026-11-24), cropped to the middle of the pile, 192 px each (`src/brand/ingredients/`). The section ends with a link on to Our Story.
 - **Smaller on phones:** the logo, the slogan and the blend's name, the switch (48 px), Shop now (54 px), the menu's
   glass (44 px).
 - New words (Kurdish for the owner to check): "Flagship" «بەرهەمی سەرەکی», "Flavoured Blend" «تێکەڵەی بەتام»,

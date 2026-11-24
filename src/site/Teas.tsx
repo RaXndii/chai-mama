@@ -1,14 +1,17 @@
-import { useEffect, useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type MouseEvent } from 'react';
 import { chaimama as copy } from '@/content';
 import { BLENDS, type BlendId, type IngredientId } from '@/content/chaimama';
 import type { Locale } from '@/content/types';
 import packLovelyUrl from '../brand/pack-lovely.webp';
 import pouchUrl from '../brand/pouch.webp';
-import teaLeavesUrl from '../brand/tea-leaves.webp';
+import cardamomUrl from '../brand/ingredients/cardamom.webp';
+import ceylonUrl from '../brand/ingredients/ceylon.webp';
+import cornflowerUrl from '../brand/ingredients/cornflower.webp';
+import earlGreyUrl from '../brand/ingredients/earlgrey.webp';
+import roseUrl from '../brand/ingredients/rose.webp';
 import { pathOf } from '../routes';
 import { Arrow } from './icons';
 import { formatIqd, unitPrice } from './order';
-import { LEAF_ATLAS, LEAF_CELLS } from './teaLeaves';
 
 interface Props {
   lang: Locale;
@@ -134,141 +137,20 @@ export default function Teas({ lang, onBuy, onStory }: Props) {
   );
 }
 
-/** Two clumps of the real loose tea cut from the owner's photo (the falling tea's atlas): x, y and size in
- *  the chip, in % of it, and which piece. */
-const TEA_PIECES: readonly [number, number, number, number][] = [
-  [12, 26, 74, 10],
-  [36, 46, 50, 3],
-];
+/** The owner's photographs of what is in the teas, each cropped to the middle of its pile (192 px). */
+const PHOTOS: Record<IngredientId, string> = {
+  ceylon: ceylonUrl,
+  cornflower: cornflowerUrl,
+  rose: roseUrl,
+  cardamom: cardamomUrl,
+  earlgrey: earlGreyUrl,
+};
 
-/**
- * An ingredient in its chip: Ceylon black tea is the real tea from the owner's photo; the others are drawn here,
- * each in its own colour, so the page needs no more pictures.
- */
+/** An ingredient on its round chip: the owner's photograph of it. */
 function Ingredient({ id }: { id: IngredientId }) {
-  if (id === 'ceylon') {
-    return (
-      <span className="chai-ing__chip" data-ing={id} aria-hidden="true">
-        {TEA_PIECES.map(([x, y, size, cell]) => {
-          const [cx, cy, cw, ch] = LEAF_CELLS[cell]!;
-          // The piece fills `size`% of the chip's width (the chip is square); the atlas is scaled to match.
-          return (
-            <span
-              key={cell}
-              className="chai-ing__leaf"
-              style={{
-                left: `${x}%`,
-                top: `${y}%`,
-                width: `${size}%`,
-                height: `${(ch * size) / cw}%`,
-                backgroundImage: `url(${teaLeavesUrl})`,
-                backgroundSize: `${(LEAF_ATLAS.w / cw) * 100}% auto`,
-                backgroundPosition: `${(cx / (LEAF_ATLAS.w - cw)) * 100}% ${(cy / (LEAF_ATLAS.h - ch)) * 100}%`,
-              }}
-            />
-          );
-        })}
-      </span>
-    );
-  }
   return (
-    <span className="chai-ing__chip" data-ing={id} aria-hidden="true">
-      <svg viewBox="0 0 48 48" width="100%" height="100%">
-        {DRAWN[id]}
-      </svg>
+    <span className="chai-ing__chip" aria-hidden="true">
+      <img src={PHOTOS[id]} alt="" width={192} height={192} loading="lazy" decoding="async" />
     </span>
   );
 }
-
-/** Petal tips around a centre, for the cornflower's ragged blue florets. */
-const floret = (n: number, r: number, color: string) =>
-  Array.from({ length: n }, (_, i) => (
-    <path
-      key={i}
-      d={`M24 24 L${24 - 3.2} ${24 - r * 0.55} L${24 - 2} ${24 - r * 0.78} L24 ${24 - r} L${24 + 2} ${24 - r * 0.78} L${24 + 3.2} ${24 - r * 0.55} Z`}
-      fill={color}
-      transform={`rotate(${(360 / n) * i + 11} 24 24)`}
-    />
-  ));
-
-const DRAWN: Record<Exclude<IngredientId, 'ceylon'>, ReactNode> = {
-  cornflower: (
-    <g>
-      {floret(9, 17, '#4f7be0')}
-      {floret(9, 12, '#3558c4')}
-      <circle cx="24" cy="24" r="4.2" fill="#24306f" />
-      <circle cx="24" cy="24" r="1.6" fill="#8fa6f0" />
-    </g>
-  ),
-  rose: (
-    <g>
-      {/* Three dried rose petals, each a soft cup with its darker heel. */}
-      {(
-        [
-          [17, 21, -35, '#e98aa1', '#c9506d'],
-          [30, 20, 30, '#f2a7b8', '#d06a83'],
-          [23, 32, 170, '#dc6d89', '#b4405e'],
-        ] as const
-      ).map(([x, y, turn, light, dark], i) => (
-        <g key={i} transform={`translate(${x} ${y}) rotate(${turn})`}>
-          <path
-            d="M0 -10C6.5 -10 9.5 -4.5 7 1.5 5 6.5 2 9 0 9S-5 6.5-7 1.5C-9.5-4.5-6.5-10 0-10Z"
-            fill={light}
-          />
-          <path d="M0 9C-1.5 6.5-1.8 4-1 2.2 0 3 1 3 2 2.2 2.6 4.5 1.6 7 0 9Z" fill={dark} />
-          <path
-            d="M0 2C-.6-2.5-.2-6 .8-8.5"
-            stroke={dark}
-            strokeWidth=".7"
-            fill="none"
-            strokeLinecap="round"
-            opacity=".6"
-          />
-        </g>
-      ))}
-    </g>
-  ),
-  cardamom: (
-    <g>
-      <g transform="rotate(-28 18 24)">
-        <ellipse cx="18" cy="24" rx="6.5" ry="12" fill="#a3bd6c" />
-        <path d="M18 12.5v23" stroke="#6f8d3c" strokeWidth="1.1" />
-        <path
-          d="M18 11.5c0-1.5.8-2.5 1.8-3"
-          stroke="#6f8d3c"
-          strokeWidth="1.2"
-          fill="none"
-          strokeLinecap="round"
-        />
-      </g>
-      {/* A pod split open, its dark seeds showing: crushed. */}
-      <g transform="rotate(22 31 27)">
-        <path d="M25 27c0-7 3-11 6-11s6 4 6 11-3 11-6 11-6-4-6-11Z" fill="#8fab58" />
-        <path d="M27.5 27c0-5 1.6-8 3.5-8s3.5 3 3.5 8-1.6 8-3.5 8-3.5-3-3.5-8Z" fill="#e9e1c4" />
-        <circle cx="30" cy="23" r="1.4" fill="#3b2a1a" />
-        <circle cx="32.2" cy="26.5" r="1.4" fill="#3b2a1a" />
-        <circle cx="29.6" cy="29.5" r="1.4" fill="#3b2a1a" />
-        <circle cx="31.8" cy="32.6" r="1.3" fill="#3b2a1a" />
-      </g>
-    </g>
-  ),
-  earlgrey: (
-    <g>
-      {/* Bergamot, the citrus of Earl Grey: a slice and a leaf. */}
-      <path d="M31 13c5-3 9-2 11 1-4 3-8 3-11-1Z" fill="#6e9a4a" />
-      <circle cx="23" cy="26" r="13" fill="#e6bd3d" />
-      <circle cx="23" cy="26" r="11" fill="#f7e08a" />
-      {Array.from({ length: 8 }, (_, i) => (
-        <path
-          key={i}
-          d="M23 26 L23 16"
-          stroke="#fff6d4"
-          strokeWidth="1.3"
-          strokeLinecap="round"
-          transform={`rotate(${i * 45} 23 26)`}
-        />
-      ))}
-      <circle cx="23" cy="26" r="2" fill="#fff6d4" />
-    </g>
-  ),
-};

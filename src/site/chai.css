@@ -2024,7 +2024,7 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   font: 400 0.95rem / 1.55 var(--body);
 }
 
-/* What is in it: each ingredient on a round chip of its own colour, its name under it. */
+/* What is in it: each ingredient on a round chip (the owner's photograph of it), its name under it. */
 .chai-tea__inside {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(4.1rem, 1fr));
@@ -2057,50 +2057,30 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
 }
 
 .chai-ing__chip {
-  --chip: #efe2cf;
   position: relative;
-  display: grid;
-  place-items: center;
+  display: block;
   inline-size: 3.5rem;
   block-size: 3.5rem;
   overflow: hidden;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0, var(--chip) 60%);
+  background: #efe2cf;
+  /* A thin cream rim, like a tasting dish, and a soft shadow under it. */
   box-shadow:
-    inset 0 0 0 1px rgb(22 19 15 / 0.07),
-    inset 0 2px 0 rgb(255 255 255 / 0.85),
-    0 8px 16px -10px rgb(60 30 0 / 0.5);
+    0 0 0 3px #fffaf1,
+    0 0 0 4px rgb(120 70 0 / 0.12),
+    0 10px 18px -10px rgb(60 30 0 / 0.55);
   transition: translate 0.35s var(--ease-out);
+}
+
+.chai-ing__chip img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .chai-ing:hover .chai-ing__chip {
   translate: 0 -3px;
-}
-
-.chai-ing__chip svg {
-  inline-size: 78%;
-  block-size: 78%;
-}
-
-.chai-ing__chip[data-ing='cornflower'] {
-  --chip: #dfe7fb;
-}
-
-.chai-ing__chip[data-ing='rose'] {
-  --chip: #fbdfe6;
-}
-
-.chai-ing__chip[data-ing='cardamom'] {
-  --chip: #e6efd3;
-}
-
-.chai-ing__chip[data-ing='earlgrey'] {
-  --chip: #fbefc6;
-}
-
-.chai-ing__leaf {
-  position: absolute;
-  background-repeat: no-repeat;
 }
 
 .chai-ing__name {
