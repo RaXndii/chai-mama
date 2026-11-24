@@ -560,8 +560,7 @@
   backdrop-filter: blur(14px);
 }
 
-.chai-lang__list[hidden],
-.chai-menu[hidden] {
+.chai-lang__list[hidden] {
   display: none;
 }
 
@@ -592,60 +591,228 @@
   background: var(--saffron);
 }
 
-/* The phone's menu: below the header, only when asked for. */
-.chai-menu-toggle {
+/* ---------- The menu on phones and tablets: a drop of glass that splits ----------
+   One glass button shows the page you are on. Pressed, it swells and splits like a drop of liquid into a row:
+   the four pages and the language, each its own drop, and the button becomes the close; closing, they flow
+   back into it. The drops (under the buttons) are merged by an SVG filter that is on only while they move;
+   the row's buttons above them are always sharp. Everything that moves is a transform or an opacity. */
+.chai-dock__defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  overflow: hidden;
+}
+
+.chai-dock {
+  --size: 48px;
+  --gap: 8px;
+  --step: calc(var(--size) + var(--gap));
+  /* Toward the page's start: left in English, right in Kurdish. */
+  --toward: -1;
+  --glass: #f8f3e7;
+  --spring: cubic-bezier(0.3, 1.35, 0.5, 1);
+  position: relative;
   display: none;
-  inline-size: 44px;
-  min-block-size: 44px;
-  justify-content: center;
-  padding: 0;
+  inline-size: var(--size);
+  block-size: var(--size);
 }
 
-.chai-menu {
-  grid-column: 1 / -1;
+[dir='rtl'] .chai-dock {
+  --toward: 1;
+}
+
+.chai-dock__glass,
+.chai-dock__goo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chai-dock__glass {
+  filter: drop-shadow(0 8px 16px rgb(40 26 8 / 0.2));
+}
+
+.chai-dock[data-moving] .chai-dock__goo {
+  filter: url(#chai-goo);
+}
+
+/* Each drop and each button sits on the close until the row opens; then it goes out its own number of steps. */
+.chai-dock__drop,
+.chai-dock__item {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  inline-size: var(--size);
+  block-size: var(--size);
+  border-radius: 50%;
+  transform: translate3d(0, 0, 0) scale(0.55);
+  transition: transform 0.38s cubic-bezier(0.5, 0, 0.75, 0) calc((var(--n) - var(--k)) * 25ms);
+}
+
+.chai-dock[data-open] :is(.chai-dock__drop, .chai-dock__item) {
+  transform: translate3d(calc(var(--k) * var(--step) * var(--toward)), 0, 0) scale(1);
+  transition: transform 0.62s var(--spring) calc(var(--k) * 45ms);
+}
+
+.chai-dock__drop {
+  background: var(--glass);
+}
+
+/* The drop under the close: it gives a little as it is pressed, and catches the light. */
+.chai-dock__drop--home {
+  transform: none;
+  transition: none;
+}
+
+.chai-dock[data-open] .chai-dock__drop--home {
+  transform: none;
+  animation: chai-drop-press 0.55s var(--ease-out);
+}
+
+@keyframes chai-drop-press {
+  30% {
+    transform: scale(1.16, 0.9);
+    background: #fffdf8;
+  }
+  65% {
+    transform: scale(0.96, 1.04);
+  }
+}
+
+.chai-dock__row {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chai-dock[data-open] .chai-dock__row {
+  pointer-events: auto;
+}
+
+.chai-dock__item,
+.chai-dock__home {
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid rgb(22 19 15 / 0.1);
-  border-radius: 18px;
-  background: rgb(250 246 238 / 0.96);
-  box-shadow: 0 22px 48px rgb(40 26 8 / 0.2);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-}
-
-.chai-menu .chai-nav__list {
-  flex-direction: column;
-  gap: 0;
-}
-
-.chai-menu .chai-nav__link {
-  min-block-size: 48px;
-  font-size: 1.05rem;
-  text-shadow: none;
-}
-
-.chai[data-end] .chai-menu .chai-nav__link {
+  place-items: center;
+  padding: 0;
+  border: 0;
   color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  /* The glass's edge and its light, sharp over the drop. */
+  box-shadow:
+    inset 0 0 0 1px rgb(22 19 15 / 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 
-.chai-menu__lang {
-  display: flex;
-  gap: var(--space-3);
+.chai-dock__item {
+  background: transparent;
+  opacity: 0;
 }
 
-.chai-menu__lang .chai-pill[aria-pressed='true'] {
-  border-color: var(--saffron);
-  box-shadow: inset 0 0 0 1px var(--saffron);
+.chai-dock[data-open] .chai-dock__item {
+  opacity: 1;
+  transition:
+    transform 0.62s var(--spring) calc(var(--k) * 45ms),
+    opacity 0.3s var(--ease-out) calc(120ms + var(--k) * 45ms);
 }
 
-/* The links fold into the menu where they would crowd the logo. */
+.chai-dock__item[aria-current='true'] {
+  color: #8a5a00;
+  box-shadow:
+    inset 0 0 0 2px var(--saffron),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.chai-dock__short {
+  font: 800 0.95rem / 1 var(--body);
+}
+
+.chai-dock__short:lang(ckb) {
+  font-family: var(--kufi);
+}
+
+/* Each button's name on a small tag of the same glass under it, readable over the sky or the ink. */
+.chai-dock__label {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 3px 7px;
+  border-radius: var(--radius-pill);
+  background: rgb(248 243 231 / 0.94);
+  box-shadow: 0 4px 10px rgb(40 26 8 / 0.14);
+  color: var(--ink);
+  font: 700 0.66rem / 1.2 var(--body);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease);
+}
+
+/* The names come once the drops have pulled apart (mid-split they would overlap). */
+.chai-dock[data-open] .chai-dock__label {
+  opacity: 1;
+  transition: opacity 0.3s var(--ease-out) calc(380ms + var(--k) * 45ms);
+}
+
+.chai:lang(ckb) .chai-dock__label,
+.chai-dock__label:lang(ckb) {
+  font-family: var(--kufi);
+  letter-spacing: 0;
+}
+
+.chai-dock__home {
+  position: relative;
+  z-index: 1;
+  inline-size: var(--size);
+  block-size: var(--size);
+  border-radius: 50%;
+  background: var(--glass);
+}
+
+.chai-dock[data-moving] .chai-dock__home {
+  /* While it moves the drop under it is the glass (the filter merges them). */
+  background: transparent;
+}
+
+.chai-dock__face {
+  grid-area: 1 / 1;
+  display: grid;
+  transition:
+    opacity 0.25s var(--ease),
+    rotate 0.4s var(--ease-out),
+    scale 0.4s var(--ease-out);
+}
+
+.chai-dock__face--close,
+.chai-dock[data-open] .chai-dock__face--page {
+  opacity: 0;
+  rotate: -60deg;
+  scale: 0.6;
+}
+
+.chai-dock[data-open] .chai-dock__face--close {
+  opacity: 1;
+  rotate: none;
+  scale: 1;
+}
+
+/* The links and the language fold into it where they would crowd the logo; the logo steps aside while the
+   row is open. */
 @media (max-width: 1100px) {
-  .chai-nav {
+  .chai-nav,
+  .chai-lang {
     display: none;
   }
-  .chai-menu-toggle {
-    display: inline-flex;
+  .chai-dock {
+    display: block;
+  }
+  .chai-brand {
+    transition: opacity 0.3s var(--ease);
+  }
+  .chai-header[data-menu] .chai-brand {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
@@ -781,6 +948,47 @@
 .chai-hero[data-copy='back'] :is(.chai-eyebrow, .chai-blend-name, .chai-lede) {
   transition-duration: 0.55s;
   transition-delay: 0s;
+}
+
+/* Shop now: the page's one strong button, in the pack's ink. */
+.chai-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 0.75rem;
+  min-block-size: 54px;
+  margin-block-start: 0.85rem;
+  padding: 0.7em 1.7em;
+  border-radius: var(--radius-pill);
+  background: #241a13;
+  color: var(--cream);
+  font: 600 1.12rem / 1 var(--serif);
+  text-decoration: none;
+  box-shadow:
+    0 14px 30px -14px rgb(40 22 6 / 0.65),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+  transition:
+    background-color 0.3s var(--ease),
+    translate 0.3s var(--ease-out);
+}
+
+.chai-buy:hover {
+  background: #34271c;
+  translate: 0 -1px;
+}
+
+.chai-buy .chai-arrow {
+  transition: translate 0.3s var(--ease-out);
+}
+
+.chai-buy:hover .chai-arrow {
+  translate: 3px 0;
+}
+
+.chai:lang(ckb) .chai-buy {
+  font-family: var(--kufi);
+  font-weight: 700;
 }
 
 /* The blend switch: a swatch of each pack's colour and its name. */
@@ -2347,33 +2555,68 @@
     text-align: center;
   }
   .chai-blend-name {
-    font-size: 1.3rem;
+    font-size: 1.6rem;
   }
   .chai-hero__choose {
     display: contents;
   }
-  .chai-lede {
-    max-inline-size: 22rem;
-    font-size: 0.82rem;
-    line-height: 1.45;
-    text-shadow: 0 0 12px rgb(255 249 236 / 0.9);
+  /* On a phone the picture speaks: the slogan and the blend's name over the sky, the pack, then the switch
+     and Shop now, solid and easy to read. The blend's line is in the shop. */
+  .chai-eyebrow--hero,
+  .chai-hero .chai-lede {
+    display: none;
   }
   .chai-blends {
     flex-wrap: nowrap;
     justify-content: center;
+    align-self: stretch;
+    gap: 0.55rem;
     margin-block-start: auto;
     pointer-events: auto;
   }
+  /* The two share the width, inside the page's margins. */
   .chai-blend {
-    padding-inline-end: 0.85em;
-    font-size: 0.86rem;
+    flex: 1 1 0;
+    justify-content: center;
+    min-inline-size: 0;
+    min-block-size: 52px;
+    padding: 0.5em 0.8em 0.5em 0.55em;
+    border-color: rgb(22 19 15 / 0.12);
+    background: rgb(250 246 238 / 0.96);
+    box-shadow: 0 10px 24px -14px rgb(40 22 6 / 0.55);
+    gap: 0.5em;
+    font: 600 clamp(0.82rem, 0.42rem + 1.75vw, 1.02rem) / 1 var(--serif);
     white-space: nowrap;
   }
-  .chai-scroll {
-    display: none;
+  .chai:lang(ckb) .chai-blend {
+    font-family: var(--kufi);
   }
-  /* The language goes into the menu; the logo keeps its name. */
-  .chai-lang {
+  .chai-blend__swatch {
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+  }
+  /* The section below starts under the hero instead of melting up over its bottom, where the switch and Shop
+     now are (the hero is sticky, so nothing in it can be lifted above that melt); the hero's own melt makes
+     the join. */
+  .chai-other {
+    --melt: 0px;
+  }
+  .chai-hero__melt {
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--sun-3) 30%, transparent) 60%,
+      var(--sun-3)
+    );
+  }
+  .chai-buy {
+    align-self: stretch;
+    min-block-size: 60px;
+    margin-block-start: 0.85rem;
+    font-size: 1.4rem;
+    pointer-events: auto;
+  }
+  .chai-scroll {
     display: none;
   }
   .chai-brand__mark {

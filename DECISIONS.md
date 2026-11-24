@@ -1,5 +1,26 @@
 # Decisions
 
+## CM-016 · 2026-11-24 · the phone's hero after the owner's picture, and a menu of glass
+
+The owner sent a picture of how the homepage should look on a phone, and a short video of a glass button that
+splits into several, for the menu ("get inspired by it, make it ours").
+
+- **The hero on a phone:** the slogan and the blend's name over the sky, the pack, then the blend switch and a
+  big **Shop now** in the pack's ink (to the shop, with the camera's move). The eyebrow and the blend's line are
+  not on the phone's hero (the line is in the shop). The switch's buttons are solid, in the serif, and share the
+  width inside the page's margins. Shop now is on the desktop too, under the switch.
+- **Why the bottom was hard to read:** the saffron melt at the top of "another flavour" came up over the bottom of
+  the picture, over the switch. The hero is sticky, so nothing inside it can be lifted above that; on phones the
+  section now starts under the hero, and the hero's own melt makes the join.
+- **The menu (phones and tablets):** one glass button showing the page you are on. Pressed, it swells and splits
+  like a drop into a row: Home, About, Shop, Connect and the language, each with its name on a small tag; the
+  button becomes the close, and they flow back into it. The liquid edge is an SVG filter on only while the glass
+  moves (0.9 s); the buttons above it stay sharp; only transforms and opacity move. Under reduced motion the row
+  simply fades. Escape or a tap elsewhere closes it; the pages stay real links. On a desktop the header is as it
+  was.
+- New words: "Shop now" / «ئێستا بکڕە» and "Close" / «داخستن» (Kurdish for the owner to check).
+- The blend switch itself (the time of day turning) is unchanged.
+
 ## CM-015 · 2026-11-24 · the site stands on its own
 
 Chai Mama was first built as a planet inside the Mars Labs universe (the M-D-T-Project repository, decisions

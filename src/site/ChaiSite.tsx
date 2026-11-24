@@ -978,6 +978,20 @@ export default function ChaiSite() {
                     </button>
                   ))}
                 </div>
+                {/* Straight to the shop: the camera moves in on the blend chosen here. */}
+                <a
+                  className="chai-buy"
+                  href={pathOf('shop')}
+                  onClick={(e) => {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    goPage('shop');
+                  }}
+                  data-testid="chai-buy"
+                >
+                  <span>{copy.hero.shop}</span>
+                  <Arrow />
+                </a>
               </div>
               <p className="sr-only" role="status">
                 {said}

@@ -50,6 +50,8 @@ export interface ChaiMamaContent {
     shop: string;
     connect: string;
     menu: string;
+    /** Closes the phone's menu. */
+    close: string;
     language: string;
   };
   hero: {
@@ -59,6 +61,8 @@ export interface ChaiMamaContent {
     blends: string;
     /** What a screen reader hears after a switch. */
     switched: (name: string) => string;
+    /** The hero's button to the shop. */
+    shop: string;
   };
   blends: Record<BlendId, ChaiBlend>;
   product: { eyebrow: string; kind: string; mascotAlt: string };
@@ -136,6 +140,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       shop: 'Shop',
       connect: 'Connect',
       menu: 'Menu',
+      close: 'Close',
       language: 'Language',
     },
     hero: {
@@ -143,6 +148,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       scroll: 'Scroll',
       blends: 'Choose a blend',
       switched: (name) => `${name}, shown.`,
+      shop: 'Shop now',
     },
     blends: {
       heritage: {
@@ -260,6 +266,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       shop: 'فرۆشگا',
       connect: 'پەیوەندی',
       menu: 'پێڕست',
+      close: 'داخستن',
       language: 'زمان',
     },
     hero: {
@@ -267,6 +274,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       scroll: 'سکڕۆڵ',
       blends: 'تێکەڵەیەک هەڵبژێرە',
       switched: (name) => `${name}، پیشان درا.`,
+      shop: 'ئێستا بکڕە',
     },
     blends: {
       heritage: {

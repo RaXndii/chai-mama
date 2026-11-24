@@ -35,8 +35,9 @@ async function navTo(page: Page, path: 'shop' | 'about' | '') {
   const href = path ? `a[href="/${path}"]` : 'a[href="/"]';
   const bar = page.locator(`.chai-nav__list--bar ${href}`).first();
   if (await bar.isVisible()) return bar.click();
-  await page.locator('.chai-menu-toggle').click();
-  await page.locator(`#chai-menu ${href}`).first().click();
+  // Phones and tablets: the glass menu opens, and the page is one of its drops.
+  await page.getByTestId('chai-menu-toggle').click();
+  await page.locator(`#chai-dock ${href}`).first().click();
 }
 /** To the shop, and wait for the camera's move to end. */
 async function toShop(page: Page) {
@@ -467,22 +468,75 @@ test.describe('Chai Mama — two blends, one place', () => {
     expect(errors).toEqual([]);
   });
 
-  test('@phone the menu: the links and the language, below the header, only when asked', async ({ page }) => {
+  test('@phone the menu: one glass button that splits into the pages and the language, and closes back', async ({
+    page,
+  }) => {
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
     const toggle = page.getByRole('button', { name: 'Menu' });
+    const dock = page.getByTestId('chai-dock');
+    const about = dock.getByRole('link', { name: 'About' });
+    // Closed: one button, the pages tucked under it (not reachable).
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('#chai-menu')).toBeHidden();
+    await expect(dock).toHaveAttribute('inert', '');
+    expect(await opacity(page, '#chai-dock .chai-dock__item:first-child')).toBe(0);
+    // Open: the four pages and the language in a row, the button now closes it; the logo steps aside.
     await toggle.tap();
-    await expect(page.locator('#chai-menu')).toBeVisible();
-    await page.locator('#chai-menu').getByRole('link', { name: 'About' }).tap();
-    await expect(page.locator('#chai-menu')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
+    await expect(dock).not.toHaveAttribute('inert', /.*/);
+    await expect.poll(() => opacity(page, '.chai-brand')).toBe(0);
+    for (const name of ['Home', 'About', 'Shop', 'Connect'])
+      await expect(dock.getByRole('link', { name })).toBeVisible();
+    await expect(dock.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'true');
+    // The row stays on the screen, its buttons thumb-sized and apart.
+    const vw = page.viewportSize()!.width;
+    await expect
+      .poll(() => about.evaluate((el) => Math.round(el.getBoundingClientRect().left)))
+      .toBeGreaterThan(0);
+    for (const item of await dock.locator('.chai-dock__item').all()) {
+      const box = (await item.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(vw);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    // A page: it goes there, and the row flows back into the button.
+    await about.tap();
     await expect(page).toHaveURL(/\/about$/);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('#chai-about').getByRole('heading', { level: 2 })).toBeVisible();
+    // The language is a drop of its own.
     await toggle.tap();
-    await page.locator('#chai-menu').getByRole('button', { name: 'کوردی' }).tap();
+    await page.getByTestId('chai-dock-lang').tap();
     await expect(site(page)).toHaveAttribute('dir', 'rtl');
+    await expect(page.getByTestId('chai-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // Escape, or a tap elsewhere, closes it.
+    await page.getByRole('button', { name: 'پێڕست' }).tap();
+    await expect(page.getByRole('button', { name: 'داخستن' })).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'پێڕست' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('@phone the hero as on the phone: the slogan, the pack, a solid switch and Shop now', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
+    // Only the slogan and the blend's name over the sky.
+    await expect(hero(page).locator('.chai-eyebrow--hero')).toBeHidden();
+    await expect(hero(page).locator('.chai-lede')).toBeHidden();
+    // Nothing lies over the switch or the button (the section below starts under the hero).
+    const buy = page.getByTestId('chai-buy');
+    await expect(buy).toBeVisible();
+    const buyBottom = (await buy.boundingBox())!.y + (await buy.boundingBox())!.height;
+    const otherTop = (await page.getByTestId('chai-other').boundingBox())!.y;
+    expect(otherTop).toBeGreaterThanOrEqual(buyBottom);
+    expect(await buy.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(36, 26, 19)');
+    // Shop now: to the shop, with the camera's move.
+    await buy.tap();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'in');
+    await expect(shop(page).getByRole('heading', { level: 2, name: 'Heritage Blend' })).toBeVisible();
   });
 
   test('a link can open on The Lovely Blend, later in the day', async ({ page }) => {
