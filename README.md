@@ -28,8 +28,12 @@ Node 22.18 or newer.
 
 ## Deploy
 
-Vercel, as a plain Vite project: build `npm run build`, output `dist`. `vercel.json` sends `/shop` and `/about` to the
-app and caches the hashed assets for a year.
+**GitHub Pages (now):** every push to `main` is built and published to the `gh-pages` branch
+(`.github/workflows/pages.yml`), served at https://raxndii.github.io/chai-mama/. The site is built with
+`BASE_PATH=/chai-mama/` there; `404.html` (a copy of the app) answers for `/shop` and `/about`.
+
+**Vercel or any host with its own domain:** a plain Vite project — build `npm run build`, output `dist`, no
+`BASE_PATH`. `vercel.json` sends `/shop` and `/about` to the app and caches the hashed assets for a year.
 
 ## Where things are
 
