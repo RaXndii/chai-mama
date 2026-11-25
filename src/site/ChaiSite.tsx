@@ -1040,11 +1040,18 @@ export default function ChaiSite() {
           <Shop
             lang={lang}
             blend={blend}
-            shown={shown}
-            copyState={copyState}
             onChoose={choose}
             onBlendKey={onBlendKey}
             onOption={(id) => setCarton(id === 'carton')}
+            onCheckout={(open) => {
+              // The page rests behind the checkout: the tea stops, the picture's drifts pause.
+              rain.current?.rest(open);
+              const root = rootEl.current;
+              if (root) {
+                if (open) root.dataset.checkout = '';
+                else delete root.dataset.checkout;
+              }
+            }}
             sectionRef={shopEl}
           />
         </div>

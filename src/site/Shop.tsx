@@ -19,52 +19,41 @@ import {
   unitPrice,
   type OptionId,
 } from './order';
+import Checkout from './Checkout';
 import { Ingredient } from './Teas';
 
 interface Props {
   lang: Locale;
-  /** The visitor's choice (the switch shows it at once). */
+  /** The visitor's choice: the shop's words follow it at once (only the scene behind turns slowly). */
   blend: BlendId;
-  /** The blend whose words are on the page (it follows the choice while the words are faded out). */
-  shown: BlendId;
-  /** The words' fade, as in the hero. */
-  copyState: 'in' | 'out' | 'back';
   onChoose: (id: BlendId) => void;
   onBlendKey: (e: KeyboardEvent<HTMLDivElement>) => void;
   /** The way to buy chosen (the picture stacks pouches behind the pack for a carton). */
   onOption: (id: OptionId) => void;
+  /** The checkout opened or closed (the page rests behind it). */
+  onCheckout: (open: boolean) => void;
   sectionRef: Ref<HTMLElement>;
 }
 
 const packOf = (b: BlendId) => (b === 'lovely' ? packLovelyUrl : pouchUrl);
 
 /**
- * The shop (DECISIONS CM-010, CM-018): everything on one screen. On a phone the picture is a band at the top with
- * the pack framed in it, and the shop a sheet under it; on a wider screen a card beside the pack. In it: the
- * blend and its price, its line, the switch between the blends, the two ways to buy, how many, the details
- * (folded), and what it comes to with the order button.
+ * The shop (DECISIONS CM-010, CM-018, CM-019), on one screen, in few words. On a wider screen, beside the pack in
+ * the picture: the switch between the blends, the blend, what is in it (the owner's photographs) and what is
+ * printed on the pack (icons); the two ways to buy, how many; and the summary card with Order now. On a phone,
+ * the pack in a band at the top and the rest on a sheet under it, the details folded.
  *
  * Choosing a pouch or a carton: a highlight glides to it, its check draws itself, the prices roll to their new
- * value, and for a carton two more pouches fan out behind the pack on the rock.
- *
- * Ordering is not open on the site yet (the owner, 2026-10-22): the button says so, and pressing it says that
- * nothing was ordered. The prices are the owner's (order.ts); no offers, delivery terms or promises are shown.
+ * value, and for a carton two more pouches fan out behind the pack. Order now opens the checkout. The prices
+ * are the owner's (order.ts); no offers or promises are shown.
  */
-export default function Shop({
-  lang,
-  blend,
-  shown,
-  copyState,
-  onChoose,
-  onBlendKey,
-  onOption,
-  sectionRef,
-}: Props) {
+export default function Shop({ lang, blend, onChoose, onBlendKey, onOption, onCheckout, sectionRef }: Props) {
   const [option, setOption] = useState<OptionId>('pouch');
   const [qty, setQty] = useState(MIN_QTY);
-  const [noted, setNoted] = useState(0);
   const [details, setDetails] = useState(false);
-  const b = copy.blends[shown];
+  const [checkout, setCheckout] = useState(false);
+  const orderBtn = useRef<HTMLButtonElement>(null);
+  const b = copy.blends[blend];
   const s = copy.shop;
   const rtl = LOCALES[lang].dir === 'rtl';
 
@@ -83,14 +72,17 @@ export default function Shop({
     pick(next);
     (e.currentTarget.querySelector(`[data-option="${next}"]`) as HTMLElement | null)?.focus();
   };
+  const openCheckout = (open: boolean) => {
+    setCheckout(open);
+    onCheckout(open);
+    if (!open) requestAnimationFrame(() => orderBtn.current?.focus({ preventScroll: true }));
+  };
 
+  /** Each way to buy in a word and its numbers: 200g; 42 × 2,750 IQD. */
   const optionText = (id: OptionId) => {
     const o = ORDER_OPTIONS[id];
-    if (id === 'pouch') return { name: s.pouch, detail: `${s.weight} · ${formatIqd(o.perPouch, lang)}` };
-    return {
-      name: s.carton,
-      detail: `${s.pouches(formatCount(o.pouches, lang))} · ${s.each(formatIqd(o.perPouch, lang))}`,
-    };
+    if (id === 'pouch') return { name: s.pouch, detail: s.weight };
+    return { name: s.carton, detail: `${formatCount(o.pouches, lang)} × ${formatIqd(o.perPouch, lang)}` };
   };
 
   return (
@@ -100,12 +92,11 @@ export default function Shop({
       className="chai-shop"
       aria-labelledby="chai-shop-title"
       tabIndex={-1}
-      data-blend={shown}
-      data-copy={copyState}
+      data-blend={blend}
       data-option={option}
       data-testid="chai-shop"
     >
-      {/* Where the pack stands (the picture is pinned behind the shop): beside the card on a wider screen, in
+      {/* Where the pack stands (the picture is pinned behind the shop): beside the panel on a wider screen, in
           the picture itself; on a phone, above the sheet, the pack comes out of the picture into this band. */}
       <div className="chai-shop__view" role="img" aria-label={b.packAlt}>
         <div className="chai-shop__pack" aria-hidden="true">
@@ -130,15 +121,6 @@ export default function Shop({
             <span className="chai-eyebrow__mark" aria-hidden="true" />
             {s.eyebrow} · {copy.product.kind}
           </p>
-          <div className="chai-shop__head">
-            <h2 id="chai-shop-title" className="chai-shop__name" data-testid="chai-shop-name">
-              {b.name}
-            </h2>
-            <p className="chai-shop__price">
-              <Rolling value={unitPrice(option)} lang={lang} testId="chai-unit" />
-            </p>
-          </div>
-          <p className="chai-shop__lede">{b.lede}</p>
           <div
             className="chai-picks"
             role="radiogroup"
@@ -171,6 +153,34 @@ export default function Shop({
               </button>
             ))}
           </div>
+          <div className="chai-shop__head">
+            <h2 id="chai-shop-title" className="chai-shop__name" data-testid="chai-shop-name">
+              {b.name}
+            </h2>
+            <p className="chai-shop__price">
+              <Rolling value={unitPrice(option)} lang={lang} testId="chai-unit" />
+            </p>
+          </div>
+          <p className="chai-shop__tag">
+            {b.kind} · {s.weight}
+          </p>
+          {/* What is in it, in pictures (the owner's photographs). */}
+          <ul className="chai-shop__inside" aria-label={copy.teas.inside}>
+            {b.ingredients.map((ing) => (
+              <li key={ing.id} className="chai-ing">
+                <Ingredient id={ing.id} />
+                <span className="chai-ing__name">{ing.name}</span>
+              </li>
+            ))}
+          </ul>
+          <ul className="chai-shop__facts chai-shop__facts--wide">
+            {b.facts.map((f) => (
+              <li key={f.text}>
+                <FactGlyph icon={f.icon} />
+                <span>{f.text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="chai-shop__options">
@@ -261,7 +271,7 @@ export default function Shop({
             </div>
           </div>
 
-          {/* The details, folded: the blend's own words, what is printed on the pack, and what is in it. */}
+          {/* A phone's details, folded: the blend's own words and what is printed on the pack. */}
           <div className="chai-details" data-open={details || undefined}>
             <button
               type="button"
@@ -285,21 +295,27 @@ export default function Shop({
                     </li>
                   ))}
                 </ul>
-                <ul className="chai-shop__inside" aria-label={copy.teas.inside}>
-                  {b.ingredients.map((ing) => (
-                    <li key={ing.id} className="chai-ing">
-                      <Ingredient id={ing.id} />
-                      <span className="chai-ing__name">{ing.name}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="chai-shop__checkout" data-testid="chai-summary">
-          <div className="chai-shop__total">
+        <aside className="chai-summary" aria-label={s.subtotal} data-testid="chai-summary">
+          <dl className="chai-summary__rows">
+            <div>
+              <dt>{optionText(option).name}</dt>
+              <dd>{formatIqd(unitPrice(option), lang)}</dd>
+            </div>
+            <div>
+              <dt>{s.quantity}</dt>
+              <dd>× {formatCount(qty, lang)}</dd>
+            </div>
+            <div>
+              <dt>{s.delivery}</dt>
+              <dd>{s.deliveryValue}</dd>
+            </div>
+          </dl>
+          <div className="chai-summary__total">
             <span className="chai-shop__label">{s.subtotal}</span>
             <strong className="chai-shop__sum">
               <Rolling value={subtotal(option, qty)} lang={lang} testId="chai-subtotal" />
@@ -309,22 +325,15 @@ export default function Shop({
             </span>
           </div>
           <button
+            ref={orderBtn}
             type="button"
             className="chai-order"
-            aria-disabled="true"
-            aria-describedby="chai-order-note"
-            onClick={() => setNoted((n) => n + 1)}
-            data-noted={noted > 0 || undefined}
+            aria-haspopup="dialog"
+            aria-expanded={checkout}
+            onClick={() => openCheckout(true)}
             data-testid="chai-order"
           >
-            <svg
-              className="chai-order__icon"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              key={noted}
-            >
+            <svg className="chai-order__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M3 4h2.2l2.3 11h10.4l2-8H6.4M9.5 19.5a1 1 0 1 0 0 .01M17 19.5a1 1 0 1 0 0 .01"
                 fill="none"
@@ -337,11 +346,18 @@ export default function Shop({
             <span>{s.cta}</span>
             <Arrow />
           </button>
-          <p id="chai-order-note" className="chai-order__note" role="status" data-on={noted > 0 || undefined}>
-            {noted > 0 ? s.ctaNote : ''}
-          </p>
-        </div>
+        </aside>
       </div>
+      {checkout && (
+        <Checkout
+          lang={lang}
+          blend={blend}
+          option={option}
+          qty={qty}
+          host={document.querySelector<HTMLElement>('.chai') ?? document.body}
+          onClose={() => openCheckout(false)}
+        />
+      )}
     </section>
   );
 }

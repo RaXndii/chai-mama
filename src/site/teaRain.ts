@@ -426,6 +426,8 @@ export interface TeaRain {
   setLevels(levels: RainLevels): void;
   /** Re-fit the canvases to the screen. */
   resize(): void;
+  /** Rest (no frames) while something covers the page, such as the checkout (CM-019). */
+  rest(resting: boolean): void;
   destroy(): void;
 }
 
@@ -465,7 +467,8 @@ export function startTeaRain(
     post({ type: 'init', back: offBack, front: offFront, opts }, [offBack, offFront]);
     post({ type: 'resize', ...size() });
     void createImageBitmap(atlas).then((bitmap) => post({ type: 'atlas', atlas: bitmap }, [bitmap]));
-    const onVisible = () => post({ type: 'hidden', hidden: document.hidden });
+    let resting = false;
+    const onVisible = () => post({ type: 'hidden', hidden: document.hidden || resting });
     document.addEventListener('visibilitychange', onVisible);
     // Only a real change is sent (the page asks on every frame of a scroll).
     let sent = { back: -1, sections: -1, dark: -1 };
@@ -478,6 +481,10 @@ export function startTeaRain(
         post({ type: 'levels', levels });
       },
       resize: () => post({ type: 'resize', ...size() }),
+      rest(r) {
+        resting = r;
+        onVisible();
+      },
       destroy() {
         document.removeEventListener('visibilitychange', onVisible);
         post({ type: 'stop' });
@@ -493,7 +500,8 @@ export function startTeaRain(
     { raf: (cb) => requestAnimationFrame(cb), caf: (id) => cancelAnimationFrame(id) },
     show,
   );
-  const onVisible = () => engine.setHidden(document.hidden);
+  let resting = false;
+  const onVisible = () => engine.setHidden(document.hidden || resting);
   document.addEventListener('visibilitychange', onVisible);
   const fit = () => {
     const s = size();
@@ -503,6 +511,10 @@ export function startTeaRain(
   return {
     setLevels: (levels) => engine.setLevels(levels),
     resize: fit,
+    rest(r) {
+      resting = r;
+      onVisible();
+    },
     destroy() {
       document.removeEventListener('visibilitychange', onVisible);
       engine.destroy();

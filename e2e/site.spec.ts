@@ -30,6 +30,23 @@ const HERITAGE =
 /** The hero's blend switch (the shop has its own, CM-010). */
 const radio = (page: Page, name: string) => hero(page).getByRole('radio', { name });
 const shop = (page: Page) => page.getByTestId('chai-shop');
+/** OpenStreetMap, without the network: blank tiles, and one address for every lookup and search. */
+async function stubMap(page: Page) {
+  const tile = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+eQaAAVdAqTP7UgSAAAAAElFTkSuQmCC',
+    'base64',
+  );
+  const address = { road: '100 Meter Street', suburb: 'Ankawa', city: 'Erbil', country: 'Iraq' };
+  await page.route('https://tile.openstreetmap.org/**', (r) =>
+    r.fulfill({ body: tile, contentType: 'image/png' }),
+  );
+  await page.route('https://nominatim.openstreetmap.org/search**', (r) =>
+    r.fulfill({ json: [{ lat: '36.2307', lon: '43.9638', display_name: 'Ankawa', address }] }),
+  );
+  await page.route('https://nominatim.openstreetmap.org/reverse**', (r) =>
+    r.fulfill({ json: { display_name: 'x', address } }),
+  );
+}
 /** A page of the site by the header's link (in the menu on a phone), in any language (CM-014). */
 async function navTo(page: Page, path: 'shop' | 'about' | '') {
   const href = path ? `a[href="/${path}"]` : 'a[href="/"]';
@@ -82,9 +99,11 @@ test.describe('Chai Mama — the opening', () => {
     await toShop(page);
     await expect(shop(page).getByRole('heading', { level: 2, name: 'Heritage Blend' })).toBeVisible();
     await expect(shop(page).getByRole('img', { name: 'The Chai Mama Heritage Blend pouch' })).toBeVisible();
-    // The pack's facts are in the folded details (CM-018).
-    await shop(page).getByTestId('chai-details').click();
-    await expect(shop(page).getByText('Rose petals', { exact: true })).toBeVisible();
+    // What is in it, and what is on the pack, beside it (CM-019).
+    await expect(
+      shop(page).getByRole('list', { name: "What's inside" }).getByText('Rose Petals'),
+    ).toBeVisible();
+    await expect(shop(page).locator('.chai-shop__facts--wide').getByText('Rose petals')).toBeVisible();
     const results = await new AxeBuilder({ page }).include('[data-testid="chai-site"]').analyze();
     expect(
       results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
@@ -515,6 +534,14 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect
       .poll(() => about.evaluate((el) => Math.round(el.getBoundingClientRect().left)))
       .toBeGreaterThan(0);
+    // Measured once the drops have grown to their size.
+    await expect
+      .poll(() =>
+        dock
+          .locator('.chai-dock__item')
+          .evaluateAll((els) => Math.min(...els.map((e) => e.getBoundingClientRect().height))),
+      )
+      .toBeGreaterThanOrEqual(44);
     for (const item of await dock.locator('.chai-dock__item').all()) {
       const box = (await item.boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);
@@ -612,7 +639,7 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('a blend chosen in the shop turns the scene and the shop with it; the order adds up; ordering is not open', async ({
+  test('a blend chosen in the shop turns the scene and the shop with it; the order adds up', async ({
     page,
   }) => {
     const errors = consoleErrors(page);
@@ -628,7 +655,8 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(s.getByRole('radio', { name: 'The Lovely Blend' })).toHaveAttribute('aria-checked', 'true');
     await expect(hero(page)).toHaveAttribute('data-blend', 'lovely');
     await expect(s.getByTestId('chai-shop-name')).toHaveText('The Lovely Blend');
-    await expect(s.locator('.chai-shop__lede')).toHaveText(LOVELY);
+    // The other pack is there at once (no fade): only the scene behind turns slowly (CM-019).
+    await expect(s.locator('.chai-shop__pack-img[data-on]')).toHaveAttribute('src', /lovely/);
     await expect(s.getByRole('img', { name: 'The Chai Mama The Lovely Blend pouch' })).toBeAttached();
     await expect.poll(() => reveal(page), { timeout: 8000 }).toBe(1);
     await expect.poll(() => cssVar(page, '.chai-shop', '--theme'), { timeout: 8000 }).toBe(1);
@@ -660,15 +688,92 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await s.getByRole('radio', { name: 'Heritage Blend' }).click();
     await expect(s.getByTestId('chai-shop-name')).toHaveText('Heritage Blend');
     await expect(unit).toHaveText('3,000 IQD');
-    // Ordering is not open: the button says so, and pressing it orders nothing (no navigation, no request).
-    await expect(order).toHaveText(/Ordering opens soon/);
-    const url = page.url();
-    await order.dispatchEvent('click');
-    await expect(s.getByRole('status').filter({ hasText: 'nothing has been ordered' })).toBeVisible();
-    expect(page.url()).toBe(url);
+    await expect(order).toHaveText(/Order now/);
     // No promises the owner has not made.
     await expect(s.getByText(/free shipping|secure|guarantee|most popular|save \d/i)).toHaveCount(0);
     expect(errors).toEqual([]);
+  });
+
+  test('Order now: the checkout asks who it is for and where it goes; the map pins the address (CM-019)', async ({
+    page,
+  }) => {
+    const errors = consoleErrors(page);
+    await stubMap(page);
+    await page.goto('/shop');
+    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
+    await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'in');
+    await shop(page).getByRole('button', { name: 'One more' }).click();
+    await shop(page).getByTestId('chai-order').click();
+    const co = page.getByTestId('chai-checkout');
+    await expect(co.getByRole('dialog')).toBeVisible();
+    await expect(co.getByTestId('chai-checkout-total')).toHaveText('6,000 IQD');
+    // The page behind holds still: no scrolling, the scene paused.
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden');
+    await expect(site(page)).toHaveAttribute('data-checkout', '');
+    // The name is asked first; nothing goes on without a name and a real number.
+    await expect(co.getByTestId('chai-field-name')).toBeFocused();
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('alert')).toHaveText(/name/i);
+    await co.getByTestId('chai-field-name').fill('Aras Mohammed');
+    await co.getByTestId('chai-field-phone').fill('123');
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('alert')).toHaveText(/number/i);
+    // Iraq's 0770… is read as +964 770…; the email is optional but checked when given.
+    await co.getByTestId('chai-field-phone').fill('0770 123 4567');
+    await co.getByTestId('chai-field-email').fill('aras@');
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('alert')).toHaveText(/email/i);
+    await co.getByTestId('chai-field-email').fill('');
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('tab', { name: /Delivery/ })).toHaveAttribute('aria-selected', 'true');
+    // Where it goes: needed; pinned on the map, whose address is looked up where the pin rests.
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('alert')).toHaveText(/where/i);
+    await co.getByTestId('chai-field-location').click();
+    const map = page.getByTestId('chai-map');
+    await expect(map).toBeVisible();
+    await expect(map.locator('.chai-map__where')).toHaveText('100 Meter Street, Ankawa, Erbil');
+    // Searching moves the map to the place chosen.
+    await map.getByTestId('chai-map-search').fill('Ankawa');
+    await map.getByRole('option').first().click();
+    await map.getByTestId('chai-map-use').click();
+    await expect(map).toBeHidden();
+    await expect(co.getByTestId('chai-field-location')).toContainText('100 Meter Street, Ankawa, Erbil');
+    // Placing it: without an order address built in, it says plainly that nothing was sent.
+    await co.getByTestId('chai-checkout-go').click();
+    const done = co.getByTestId('chai-checkout-done');
+    await expect(done).toBeVisible();
+    await expect(done).toContainText('Your order is ready');
+    await expect(done).toContainText('+964 770 123 4567');
+    await done.getByRole('button', { name: 'Back to the shop' }).click();
+    await expect(co).toBeHidden();
+    await expect(site(page)).not.toHaveAttribute('data-checkout', '');
+    const results = await new AxeBuilder({ page }).include('[data-testid="chai-site"]').analyze();
+    expect(results.violations.map((v) => v.id)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test('the checkout without a map: the address is typed instead; Escape closes it', async ({ page }) => {
+    // No map here (offline, blocked): it says so and asks for the address in words.
+    await page.route('https://tile.openstreetmap.org/**', (r) => r.abort());
+    await page.route('https://nominatim.openstreetmap.org/**', (r) => r.abort());
+    await page.goto('/shop');
+    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
+    await shop(page).getByTestId('chai-order').click();
+    const co = page.getByTestId('chai-checkout');
+    await co.getByTestId('chai-field-name').fill('Sara');
+    await co.getByTestId('chai-field-dial').selectOption('DE');
+    await co.getByTestId('chai-field-phone').fill('+49 1512 3456789');
+    await co.getByTestId('chai-checkout-go').click();
+    await co.getByTestId('chai-field-location').click();
+    await page.getByRole('button', { name: 'Type the address instead' }).click({ timeout: 20_000 });
+    await co.getByTestId('chai-field-city').fill('Berlin');
+    await co.getByTestId('chai-field-address').fill('Torstraße 1');
+    await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByTestId('chai-checkout-done')).toContainText('+49 1512 3456 789');
+    await expect(co.getByTestId('chai-checkout-done')).toContainText('Torstraße 1, Berlin');
+    await page.keyboard.press('Escape');
+    await expect(co).toBeHidden();
   });
 
   test('the tea falls over every page: the sections below the hero and Our Story too (CM-012)', async ({
@@ -771,5 +876,15 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     );
     await details.tap();
     await expect(details).toHaveAttribute('aria-expanded', 'false');
+    // Order now: the checkout comes up from the bottom as a sheet, the full width of the screen.
+    await shop(page).getByTestId('chai-order').tap();
+    const sheet = page.getByTestId('chai-checkout').getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    await expect
+      .poll(async () => {
+        const b = (await sheet.boundingBox())!;
+        return [Math.round(b.x), Math.round(b.width), Math.round(b.y + b.height)];
+      })
+      .toEqual([0, vw, vh]);
   });
 });

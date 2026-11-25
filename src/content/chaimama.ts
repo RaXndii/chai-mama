@@ -102,6 +102,47 @@ export interface ChaiMamaContent {
   };
   /** The teas, under the hero (CM-017): each blend, what is in it, and a way to buy it. */
   teas: { title: string; flagship: string; inside: string; buy: string };
+  /** The checkout (CM-019): who it is for, a phone, where to deliver it. */
+  checkout: {
+    title: string;
+    steps: readonly [string, string];
+    name: string;
+    phone: string;
+    dial: string;
+    email: string;
+    optional: string;
+    location: string;
+    pin: string;
+    change: string;
+    landmark: string;
+    notes: string;
+    next: string;
+    place: string;
+    placing: string;
+    back: string;
+    errors: { name: string; phone: string; email: string; location: string; send: string };
+    map: {
+      title: string;
+      search: string;
+      find: string;
+      use: string;
+      cancel: string;
+      hint: string;
+      accuracy: (m: string) => string;
+      rough: string;
+      failed: string;
+      typeInstead: string;
+      city: string;
+      address: string;
+    };
+    done: {
+      sent: (name: string) => string;
+      sentBody: string;
+      ready: string;
+      readyBody: string;
+      close: string;
+    };
+  };
   /**
    * About (CM-011): the owner's own words about the brand and how its tea is made (2026-10-22). It takes the
    * place of CM-007's curtain footer at the end of the page.
@@ -223,7 +264,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       delivery: 'Delivery',
       deliveryValue: 'Not included',
       subtotal: 'Subtotal',
-      cta: 'Ordering opens soon',
+      cta: 'Order now',
       ctaNote: 'Ordering on the site isn’t open yet, so nothing has been ordered.',
     },
     teas: {
@@ -231,6 +272,52 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       flagship: 'Flagship',
       inside: "What's inside",
       buy: 'Buy now',
+    },
+    checkout: {
+      title: 'Your order',
+      steps: ['Details', 'Delivery'],
+      name: 'Full name',
+      phone: 'Phone',
+      dial: 'Country code',
+      email: 'Email',
+      optional: 'optional',
+      location: 'Delivery location',
+      pin: 'Pin your address on the map',
+      change: 'Change',
+      landmark: 'Building, floor, nearest landmark',
+      notes: 'Notes',
+      next: 'Continue',
+      place: 'Place order',
+      placing: 'Placing…',
+      back: 'Back',
+      errors: {
+        name: 'Write your name.',
+        phone: 'Check the number.',
+        email: 'Check the email.',
+        location: 'Pin where to deliver.',
+        send: 'It didn’t go through. Try again in a moment.',
+      },
+      map: {
+        title: 'Pick your delivery location',
+        search: 'Search a place, street, landmark',
+        find: 'Find my location',
+        use: 'Use this location',
+        cancel: 'Cancel',
+        hint: 'Move the map to put the pin on your door.',
+        accuracy: (m) => `Accuracy ±${m} m`,
+        rough: 'That fix is rough — move the pin to your door.',
+        failed: 'The map didn’t load.',
+        typeInstead: 'Type the address instead',
+        city: 'City',
+        address: 'Street, area',
+      },
+      done: {
+        sent: (name) => `Thank you, ${name}`,
+        sentBody: 'Your order has been sent.',
+        ready: 'Your order is ready',
+        readyBody: 'Ordering on the site isn’t open yet, so it hasn’t been sent.',
+        close: 'Back to the shop',
+      },
     },
     about: {
       title: 'Our Story',
@@ -356,7 +443,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       delivery: 'گەیاندن',
       deliveryValue: 'تێیدا نییە',
       subtotal: 'کۆی گشتی',
-      cta: 'داواکردن بەم زووانە دەکرێتەوە',
+      cta: 'ئێستا داوا بکە',
       ctaNote: 'داواکردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە هیچ داواکارییەک نەکرا.',
     },
     teas: {
@@ -364,6 +451,52 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       flagship: 'بەرهەمی سەرەکی',
       inside: 'پێکهاتەکان',
       buy: 'ئێستا بکڕە',
+    },
+    checkout: {
+      title: 'داواکارییەکەت',
+      steps: ['زانیاری', 'گەیاندن'],
+      name: 'ناوی تەواو',
+      phone: 'ژمارەی مۆبایل',
+      dial: 'کۆدی وڵات',
+      email: 'ئیمەیڵ',
+      optional: 'ئارەزوومەندانە',
+      location: 'شوێنی گەیاندن',
+      pin: 'ناونیشانەکەت لەسەر نەخشە دیاری بکە',
+      change: 'گۆڕین',
+      landmark: 'بینا، نهۆم، نزیکترین شوێنی دیار',
+      notes: 'تێبینی',
+      next: 'بەردەوام بە',
+      place: 'داواکردن',
+      placing: 'دەنێردرێت…',
+      back: 'گەڕانەوە',
+      errors: {
+        name: 'ناوت بنووسە.',
+        phone: 'ژمارەکە بپشکنە.',
+        email: 'ئیمەیڵەکە بپشکنە.',
+        location: 'شوێنی گەیاندن دیاری بکە.',
+        send: 'نەنێردرا. کەمێکی تر هەوڵ بدەرەوە.',
+      },
+      map: {
+        title: 'شوێنی گەیاندن هەڵبژێرە',
+        search: 'گەڕان بۆ شوێن، شەقام، شوێنی دیار',
+        find: 'شوێنەکەم بدۆزەرەوە',
+        use: 'ئەم شوێنە بەکاربهێنە',
+        cancel: 'پاشگەزبوونەوە',
+        hint: 'نەخشەکە بجوڵێنە تا نیشانەکە بکەوێتە سەر دەرگاکەت.',
+        accuracy: (m) => `وردی ±${m} م`,
+        rough: 'شوێنەکە ورد نییە — نیشانەکە ببە سەر دەرگاکەت.',
+        failed: 'نەخشەکە نەکرایەوە.',
+        typeInstead: 'ناونیشانەکە بنووسە',
+        city: 'شار',
+        address: 'شەقام، گەڕەک',
+      },
+      done: {
+        sent: (name) => `سوپاس، ${name}`,
+        sentBody: 'داواکارییەکەت نێردرا.',
+        ready: 'داواکارییەکەت ئامادەیە',
+        readyBody: 'داواکردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە نەنێردراوە.',
+        close: 'گەڕانەوە بۆ فرۆشگا',
+      },
     },
     about: {
       title: 'چیرۆکی ئێمە',

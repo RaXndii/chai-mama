@@ -1,5 +1,39 @@
 # Decisions
 
+## CM-019 · 2026-11-25 · the earlier shop on a laptop, fewer words, and a checkout
+
+The owner liked the earlier laptop shop better, wanted the ingredients placed in it, no fade between the packs
+when the tea changes (only the light and the scene), fewer words, and an order that works: after Order now, a
+name, an email if they like, a phone and where to deliver (the Middle East first, Europe too), after their own
+shop's checkout and a liquid-glass reference, in Chai Mama's own look.
+
+- **Laptop:** beside the pack, in its light: the blend switch, the name, "Flavoured Blend · 200g", the five
+  ingredients in the owner's photographs with their names, what is on the pack (icon and words, hairlines
+  between), the two ways to buy side by side, how many, and a summary card (option, quantity, delivery,
+  subtotal) with Order now. The long description and the folded details are a phone's only.
+- **Phone:** the sheet as before, with the ingredients as a row of small photographs under the name and price
+  (their names read out, not shown); the label "Choose your order" read out, not shown.
+- **No fade between packs:** the other pack is simply there; the scene behind still turns slowly.
+- **The checkout** (`Checkout.tsx`, rules in `checkout.ts`): a pane of warm glass (a sheet from the bottom on a
+  phone) whose rim catches the light toward the pointer; two steps, Details and Delivery, with a drop of glass
+  that springs between them; the button's words roll in; placing the order squashes the pane like a drop
+  landing. The page behind holds still (no scroll, the tea rests, the drifts pause).
+  - **Details:** full name; phone with its country (Iraq first, then the Middle East, then Europe), read however
+    it is typed (0770…, +964…, 00964…, Kurdish digits) and checked for that country's length; email optional,
+    checked when given.
+  - **Delivery:** pinned on a map (OpenStreetMap, as on the owner's shop): the pin stays in the middle and the
+    map moves under it; search a place, street or landmark; find my position, with how precise it is. The
+    address where the pin rests is looked up and shown. Where the map cannot load, the address is typed (city,
+    street and area). Then building or landmark, and notes, both optional.
+  - **The map is its own download,** fetched only when it is opened (Leaflet, ~46 kB gzipped): the shop stays
+    as light as it was.
+  - **Where an order goes:** to the shop's order address when the site is built with one
+    (`VITE_ORDER_ENDPOINT`, a URL that takes the order as JSON). Without one, nothing leaves the page and the
+    visitor is told plainly that it has not been sent. The owner has to say where orders should arrive.
+- **Not taken from the reference:** its stack (shadcn, Tailwind). The site's own CSS does the same at no extra
+  weight; only the ideas came over.
+- **New Kurdish words** (the checkout's) are for the owner to check.
+
 ## CM-018 · 2026-11-25 · the shop on one screen
 
 The owner: going to the shop "you have to wait like 3 seconds", then scroll before everything shows; it should all
