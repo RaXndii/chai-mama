@@ -707,8 +707,10 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await co.getByTestId('chai-field-email').fill('aras@');
     await co.getByTestId('chai-checkout-go').click();
     await expect(co.getByRole('alert')).toHaveText(/email/i);
-    await co.getByTestId('chai-field-email').fill('');
+    // Left blank (or only spaces): no error, nothing asked, and the order goes on without one.
+    await co.getByTestId('chai-field-email').fill('   ');
     await co.getByTestId('chai-checkout-go').click();
+    await expect(co.getByRole('alert')).toHaveCount(0);
     await expect(co.getByRole('tab', { name: /Delivery/ })).toHaveAttribute('aria-selected', 'true');
     // Where it goes: needed; pinned on the map, whose address is looked up where the pin rests.
     await co.getByTestId('chai-checkout-go').click();

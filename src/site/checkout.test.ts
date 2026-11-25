@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DIALS, dialOf, digitsOnly, emailOk, readPhone, sendOrder, showPhone } from './checkout';
 
 describe('the checkout (CM-019)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
   it('lists the Middle East first (Iraq at the top), then Europe, each country once', () => {
     expect(DIALS[0]!.iso).toBe('IQ');
     const isos = DIALS.map((d) => d.iso);
@@ -48,6 +53,36 @@ describe('the checkout (CM-019)', () => {
     expect(emailOk(' aras@example.co ')).toBe(true);
     expect(emailOk('aras@')).toBe(false);
     expect(emailOk('aras@example')).toBe(false);
+  });
+
+  it('sends an order without an email when none was given (the email is optional)', async () => {
+    vi.stubEnv('VITE_ORDER_ENDPOINT', 'https://orders.example/chai');
+    let body = '';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        body = String(init.body);
+        return new Response('{}', { status: 200 });
+      }),
+    );
+    await expect(
+      sendOrder({
+        blend: 'lovely',
+        option: 'carton',
+        quantity: 2,
+        unitPrice: 115500,
+        total: 231000,
+        currency: 'IQD',
+        name: 'Aras',
+        phone: '+9647502323588',
+        email: undefined,
+        place: { label: 'Peshawa Qazi Street, Erbil' },
+        lang: 'en',
+      }),
+    ).resolves.toBe('sent');
+    const sent = JSON.parse(body);
+    expect(sent).not.toHaveProperty('email');
+    expect(sent).toMatchObject({ name: 'Aras', phone: '+9647502323588', total: 231000 });
   });
 
   it('sends nothing without an order address, and says so', async () => {
