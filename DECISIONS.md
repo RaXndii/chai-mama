@@ -1,5 +1,32 @@
 # Decisions
 
+## CM-020 · 2026-11-25 · no falling tea, a clean sky behind the pack, and Mama winks when you order
+
+The owner, from an iPhone: thin lines showed in the sky behind the pack in the shop (more of them after a
+carton went back to a single pouch); the falling tea should go from every page, for a softer, smoother site; and
+placing an order should feel like buying something — a really good animation, with Mama (the pack's man with
+his glass of tea) winking in place of the check mark, and a satisfying sound.
+
+- **The lines were the old pouch's outline.** Cutting the pouch out of the photograph had left a faint halo of
+  it on the rock's plate, hidden while the picture's pouch stood over it and seen once it stepped aside (the
+  shop on a phone). `scripts/chaimama/ledge_halo.py` cleared it from the six rock plates (everything above the
+  rock in the pouch's columns; the rock's own edge and the fade at the pouch's foot kept). The picture's pouch is
+  now hidden outright on a phone's shop (not only see-through, which Safari can still edge), and the carton's
+  two extra pouches are hidden outright once they have folded back.
+- **No falling tea anywhere.** The tea, its worker, its canvases, its sprite and its script are gone: nothing
+  is drawn every frame any more, and the page is lighter.
+- **Placing an order:** the pack flies from the checkout's corner, in an arc, into a ring that draws itself;
+  as it lands the ring pulses and ripples, and tea leaves, rose petals, cardamom and saffron burst out of it;
+  Mama springs up inside the ring, tips his head and winks, and a small check joins him; the words follow.
+  He winks again every few seconds, and when tapped.
+- **The sound** is made in the browser (no file): a soft pop as the pack lands, a bell chord rising over it
+  (G major) with a little echo, and the clink of a tea glass on the wink; a short buzz on phones that have one.
+  It is woken in the tap on Place order (browsers allow sound only after a tap); an iPhone's ringer switch
+  silences it, as it does all web pages.
+- **Reduced motion:** no flight and no burst; the ring is drawn, Mama fades in and still winks.
+- **Still open:** where orders should arrive (`VITE_ORDER_ENDPOINT`); until then the thanks says plainly that
+  the order was not sent.
+
 ## CM-019 · 2026-11-25 · the earlier shop on a laptop, fewer words, and a checkout
 
 The owner liked the earlier laptop shop better, wanted the ingredients placed in it, no fade between the packs

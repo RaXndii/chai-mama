@@ -16,6 +16,7 @@ import { chaimama as copy } from '@/content';
 import type { BlendId } from '@/content/chaimama';
 import { LOCALES, type Locale } from '@/content/types';
 import { POUCHES } from './arrival';
+import Celebrate from './Celebrate';
 import {
   DEFAULT_DIAL,
   DIALS,
@@ -26,6 +27,7 @@ import {
   showPhone,
   type Place,
 } from './checkout';
+import { primeChime } from './chime';
 import { formatCount, formatIqd, subtotal, unitPrice, type OptionId } from './order';
 
 // The map (with Leaflet) is its own chunk, fetched only when the visitor opens it.
@@ -57,6 +59,7 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
   const uid = useId().replace(/:/g, '');
   const panel = useRef<HTMLDivElement>(null);
   const first = useRef<HTMLInputElement>(null);
+  const packImg = useRef<HTMLImageElement>(null);
   const [step, setStep] = useState<0 | 1>(0);
   const [phase, setPhase] = useState<'idle' | 'busy' | 'done'>('idle');
   const [result, setResult] = useState<'sent' | 'unsent'>('unsent');
@@ -123,6 +126,8 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
     const to = where();
     if (!to) return void fail('location', c.errors.location);
     setError(null);
+    // In the tap itself: the sound of the order going in may play once it has gone (chime.ts).
+    primeChime();
     setPhase('busy');
     try {
       const sent = await sendOrder({
@@ -177,7 +182,14 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
       >
         <span className="chai-checkout__rim" aria-hidden="true" />
         <header className="chai-checkout__head">
-          <img className="chai-checkout__pack" src={POUCHES[blend].small} alt="" width={41} height={56} />
+          <img
+            ref={packImg}
+            className="chai-checkout__pack"
+            src={POUCHES[blend].small}
+            alt=""
+            width={41}
+            height={56}
+          />
           <div className="chai-checkout__what">
             <h2 id={`${uid}-title`} className="chai-checkout__title">
               {b.name}
@@ -201,11 +213,7 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
 
         {phase === 'done' ? (
           <div className="chai-checkout__done" role="status" data-testid="chai-checkout-done">
-            <span className="chai-checkout__mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} />
-              </svg>
-            </span>
+            <Celebrate from={packImg.current} sound />
             <h3 className="chai-checkout__thanks">
               {result === 'sent' ? c.done.sent(name.trim().split(/\s+/)[0] ?? '') : c.done.ready}
             </h3>

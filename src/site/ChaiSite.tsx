@@ -16,7 +16,6 @@ import { navigate, usePage } from '@/app/router';
 import { chaimama as copy, useLocale } from '@/content';
 import { BLENDS, type BlendId } from '@/content/chaimama';
 import { LOCALES } from '@/content/types';
-import teaLeavesUrl from '../brand/tea-leaves.webp';
 import { ARRIVAL, ARRIVAL_CALM, CLOUD_VEIL } from '../entrance';
 import { pathOf, type ChaiPage } from '../routes';
 import {
@@ -41,7 +40,6 @@ import { Arrow } from './icons';
 import { NAV_PAGE, type NavSection } from './nav';
 import Shop, { PackGhosts } from './Shop';
 import Teas from './Teas';
-import { startTeaRain, type TeaRain } from './teaRain';
 import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
 import './chai.css';
 
@@ -162,9 +160,6 @@ export default function ChaiSite() {
   const meltEl = useRef<HTMLDivElement>(null);
   const copyEl = useRef<HTMLDivElement>(null);
   const cueEl = useRef<HTMLAnchorElement>(null);
-  const rainBack = useRef<HTMLCanvasElement>(null);
-  const rainFront = useRef<HTMLCanvasElement>(null);
-  const rain = useRef<TeaRain | null>(null);
   const [clarity] = useState(clarityOn);
   const [size, setSize] = useState<Size>(() =>
     pickSize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1),
@@ -446,9 +441,8 @@ export default function ChaiSite() {
   const current: NavSection = page === 'shop' ? 'chai-tea' : page === 'about' ? 'chai-about' : 'chai-top';
 
   /**
-   * The header, and how much tea falls where (CM-012), for the page and its scroll: in the picture behind the
-   * words (a little thicker in the shop), over the sections once the hero has gone up, and lit over the ink of
-   * Our Story. A scroll frame reads nothing but the scroll position (the hero's height is measured on resize).
+   * The header, and whether the picture is on the screen, for the page and its scroll. A scroll frame reads
+   * nothing but the scroll position (the hero's height is measured on resize).
    */
   const sync = () => {
     const top = window.scrollY;
@@ -463,16 +457,6 @@ export default function ChaiSite() {
       if (away) el.dataset.away = '';
       else delete el.dataset.away;
     }
-    if (pg === 'about') {
-      rain.current?.setLevels({ back: 0, sections: 1, dark: 1 });
-      return;
-    }
-    const cover = pg === 'home' ? Math.min(1, Math.max(0, (heroH.current - top) / vh)) : 1;
-    rain.current?.setLevels({
-      back: cover > 0 ? 0.72 : 0,
-      sections: 1 - cover,
-      dark: 0,
-    });
   };
   useEffect(() => {
     let raf = 0;
@@ -534,7 +518,12 @@ export default function ChaiSite() {
       // copy flies from where the picture's pack stands, which steps aside for it).
       const k = clamp01((p - 0.04) * 2.6);
       set(panel, k, still || k >= 1 ? 'none' : `translate3d(0, ${((1 - k) * 0.14 * vh).toFixed(1)}px, 0)`);
-      if (pouch) pouch.style.opacity = p > 0 ? '0' : '';
+      if (pouch) {
+        // Out of the picture altogether (not only see-through): Safari can leave hairline edges of a layer
+        // that is merely transparent.
+        pouch.style.opacity = p > 0 ? '0' : '';
+        pouch.style.visibility = p > 0 ? 'hidden' : '';
+      }
       const pack = shopEl.current?.querySelector<HTMLElement>('.chai-shop__pack');
       if (pack && p > 0) {
         if (!packFlip.current) packFlip.current = measurePackFlip(pack);
@@ -547,7 +536,10 @@ export default function ChaiSite() {
       }
       return;
     }
-    if (pouch) pouch.style.opacity = '';
+    if (pouch) {
+      pouch.style.opacity = '';
+      pouch.style.visibility = '';
+    }
     set(panel, 1, 'none');
     const parts = panel?.children ?? [];
     Array.from(parts).forEach((part, i) => {
@@ -663,34 +655,6 @@ export default function ChaiSite() {
     // The page's own state is in refs; this runs per page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
-
-  // The tea (CM-010, CM-012): its pieces load once the page is at rest, and fall wherever the visitor is.
-  useEffect(() => {
-    if (stage !== 'home') return;
-    const back = rainBack.current;
-    const front = rainFront.current;
-    if (!back || !front) return;
-    let live = true;
-    const img = new Image();
-    img.src = teaLeavesUrl;
-    const onResize = () => rain.current?.resize();
-    void img
-      .decode()
-      .catch(() => {})
-      .then(() => {
-        if (!live || !img.naturalWidth) return;
-        const q = qualityStore.getState();
-        rain.current = startTeaRain(back, front, img, { lite: q.tier === 'lite', still: q.reducedMotion });
-        sync();
-        window.addEventListener('resize', onResize);
-      });
-    return () => {
-      live = false;
-      window.removeEventListener('resize', onResize);
-      rain.current?.destroy();
-      rain.current = null;
-    };
-  }, [stage]);
 
   // New images for the screen (a phone turned round) come with new boxes: placed again where the camera is.
   useLayoutEffect(() => {
@@ -962,9 +926,8 @@ export default function ChaiSite() {
               ))}
               <div className="chai-mist chai-mist--a" />
               <div className="chai-mist chai-mist--b" />
-              {/* The blend's light across the open side as the shop comes in, and the tea falling through it. */}
+              {/* The blend's light across the open side as the shop comes in. */}
               <div ref={washEl} className="chai-wash" />
-              <canvas ref={rainBack} className="chai-rain" />
             </div>
             <p className="sr-only">{copy.blends[blend].heroAlt}</p>
             <div ref={copyEl} className="chai-hero__copy">
@@ -1044,8 +1007,7 @@ export default function ChaiSite() {
             onBlendKey={onBlendKey}
             onOption={(id) => setCarton(id === 'carton')}
             onCheckout={(open) => {
-              // The page rests behind the checkout: the tea stops, the picture's drifts pause.
-              rain.current?.rest(open);
+              // The page rests behind the checkout: the picture's drifts pause.
               const root = rootEl.current;
               if (root) {
                 if (open) root.dataset.checkout = '';
@@ -1063,8 +1025,6 @@ export default function ChaiSite() {
       {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}
       <About lang={lang} onTop={toTop} />
 
-      {/* The few pieces of tea that fall right past the camera, in front of everything but the header. */}
-      <canvas ref={rainFront} className="chai-rain chai-rain--front" aria-hidden="true" />
       <div ref={mist} className="chai-veil" aria-hidden="true" />
     </div>
   );

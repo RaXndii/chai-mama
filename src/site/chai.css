@@ -1250,26 +1250,6 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   opacity: 0;
 }
 
-/* The tea: the back canvas in the picture (behind the shop's words and the pack's own box), the front one with
-   the few near pieces, over everything but the header. */
-.chai-rain {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  pointer-events: none;
-}
-
-.chai-rain--front {
-  position: fixed;
-  /* Its canvas is drawn from the screen's left edge (the page sets its width), in Kurdish too. */
-  right: auto;
-  left: 0;
-  z-index: 4;
-  inline-size: 100vw;
-  block-size: 100vh;
-}
-
 .chai-shop {
   position: relative;
   z-index: 2;
@@ -1916,15 +1896,23 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   transform: scale(0.9);
   transform-origin: 50% 100%;
   filter: brightness(0.88);
+  /* Gone, not only see-through, once they have folded back (no trace of them is left behind the pack). */
+  visibility: hidden;
   transition:
     transform 0.6s cubic-bezier(0.3, 1.35, 0.5, 1),
-    opacity 0.3s var(--ease);
+    opacity 0.3s var(--ease),
+    visibility 0s 0.6s;
   pointer-events: none;
 }
 
 .chai-shop[data-option='carton'] .chai-ghost,
 .chai-journey[data-shop='in'] .chai-hero[data-carton] .chai-ghost {
   opacity: 1;
+  visibility: visible;
+  transition:
+    transform 0.6s cubic-bezier(0.3, 1.35, 0.5, 1),
+    opacity 0.3s var(--ease),
+    visibility 0s;
 }
 
 .chai-shop[data-option='carton'] .chai-ghost--a,
@@ -3071,7 +3059,9 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   }
   .chai-ghost {
     transform: none !important;
-    transition: opacity 0.3s var(--ease);
+    transition:
+      opacity 0.3s var(--ease),
+      visibility 0s 0.3s;
   }
   .chai-option:hover,
   .chai-order:hover {
@@ -3097,7 +3087,7 @@ html:has(.chai-checkout) {
   overflow: hidden;
 }
 
-/* While it is open, the scene behind holds still (the rain rests too: ChaiSite.tsx). */
+/* While it is open, the scene behind holds still. */
 .chai[data-checkout] :is(.chai-sky, .chai-mist, .chai-leaves, .chai-leaves__sway, .chai-scroll__line) {
   animation-play-state: paused;
 }
@@ -3695,43 +3685,297 @@ html:has(.chai-checkout) {
   text-align: center;
 }
 
-.chai-checkout__mark {
+/* Mama, as the check mark (CM-020): the ring draws itself while the pack flies in (Celebrate.tsx); as it lands
+   the ring pulses and a ripple goes out, the tea bursts out of it, Mama springs up inside and winks, and a
+   little check joins him. Times from the thanks appearing; the landing is at 0.56 s, the wink at 1.25 s. */
+.chai-win {
+  --land: 0.56s;
+  --wink: 1.25s;
+  position: relative;
   display: grid;
   place-items: center;
-  inline-size: 64px;
-  block-size: 64px;
-  border-radius: 50%;
-  background: var(--c-accent);
-  box-shadow: 0 14px 30px -12px color-mix(in oklab, var(--c-accent) 80%, transparent);
-  animation: chai-pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  inline-size: 132px;
+  block-size: 132px;
+  margin-block-start: 0.2rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.chai-checkout__mark svg {
+.chai-win__fly {
+  position: fixed;
+  z-index: 3;
+  margin: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgb(40 20 0 / 0.35));
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.chai-win__ring {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  transform: rotate(-90deg);
+  animation: chai-win-pulse 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--land) both;
+}
+
+.chai-win__track,
+.chai-win__arc {
+  fill: none;
+  stroke-width: 4;
+}
+
+.chai-win__track {
+  fill: #fffaf0;
+  stroke: rgb(22 19 15 / 0.08);
+}
+
+.chai-win__arc {
+  stroke: var(--c-accent);
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chai-draw 0.5s cubic-bezier(0.5, 0, 0.3, 1) 0.06s forwards;
+}
+
+@keyframes chai-win-pulse {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.chai-win__ripple {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--c-glow);
+  border-radius: 50%;
+  opacity: 0;
+  animation: chai-win-ripple 0.9s var(--ease-out) var(--land) both;
+}
+
+@keyframes chai-win-ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+/* Mama inside the ring: up from nothing with a spring, a glint across him once he is there. */
+.chai-win__face {
+  position: relative;
+  inline-size: 112px;
+  block-size: 112px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(22 19 15 / 0.06);
+  animation: chai-win-pop 0.7s cubic-bezier(0.25, 1.7, 0.45, 1) var(--land) both;
+}
+
+.chai-win__face svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.chai-win__face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 245 210 / 0.75) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: chai-win-glint 0.9s var(--ease-out) calc(var(--land) + 0.25s) forwards;
+}
+
+@keyframes chai-win-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-25deg);
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes chai-win-glint {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+/* The wink: his eye closes and opens (and again every few seconds, and whenever he is tapped). */
+.chai-win__lid {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 40%;
+  animation: chai-wink 5.5s var(--wink) infinite;
+}
+
+.chai-win__lid[data-again] {
+  animation-delay: 0s;
+}
+
+@keyframes chai-wink {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.4);
+  }
+  1.5%,
+  6% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  8%,
+  100% {
+    opacity: 0;
+    transform: scaleY(0.6);
+  }
+}
+
+/* With the wink, his head tips a little, as one does. */
+.chai-win__face svg {
+  transform-origin: 50% 80%;
+  animation: chai-win-nod 0.6s ease-in-out var(--wink) both;
+}
+
+@keyframes chai-win-nod {
+  40% {
+    transform: rotate(-5deg) scale(1.04);
+  }
+}
+
+.chai-win__tick {
+  position: absolute;
+  inset-block-end: 4px;
+  inset-inline-end: 4px;
+  display: grid;
+  place-items: center;
   inline-size: 34px;
   block-size: 34px;
+  border: 3px solid #fffaf0;
+  border-radius: 50%;
+  background: var(--c-accent);
+  box-shadow: 0 6px 14px -6px rgb(40 20 0 / 0.6);
+  animation: chai-win-pop 0.5s cubic-bezier(0.25, 1.8, 0.45, 1) calc(var(--wink) - 0.1s) both;
+}
+
+.chai-win__tick svg {
+  inline-size: 20px;
+  block-size: 20px;
   fill: none;
   stroke: #fff;
-  stroke-width: 2.6;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.chai-checkout__mark path {
+.chai-win__tick path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: chai-draw 0.5s var(--ease-out) 0.3s forwards;
-}
-
-@keyframes chai-pop {
-  from {
-    transform: scale(0.4);
-    opacity: 0;
-  }
+  animation: chai-draw 0.35s var(--ease-out) calc(var(--wink) + 0.1s) forwards;
 }
 
 @keyframes chai-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* The burst: what is in the tea, out of the ring and falling away. */
+.chai-win__burst {
+  position: absolute;
+  inset: 50%;
+  pointer-events: none;
+}
+
+.chai-win__bit {
+  position: absolute;
+  inset-block-start: -5px;
+  inset-inline-start: -4px;
+  inline-size: 8px;
+  block-size: 10px;
+  opacity: 0;
+  animation: chai-win-bit 0.95s cubic-bezier(0.15, 0.8, 0.35, 1) var(--land) both;
+}
+
+.chai-win__bit--leaf {
+  border-radius: 80% 0;
+  background: #3a2516;
+}
+
+.chai-win__bit--petal {
+  inline-size: 10px;
+  border-radius: 60% 40% 60% 40%;
+  background: #d4597a;
+}
+
+.chai-win__bit--seed {
+  inline-size: 7px;
+  block-size: 11px;
+  border-radius: 50%;
+  background: #8a9a3f;
+}
+
+.chai-win__bit--saffron {
+  inline-size: 3px;
+  block-size: 12px;
+  border-radius: 2px;
+  background: #e8770b;
+}
+
+@keyframes chai-win-bit {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(0) rotate(0) scale(0.3);
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) rotate(var(--r)) scale(var(--s));
+  }
+}
+
+/* The words come up after Mama, one after another. */
+.chai-checkout__done
+  > :is(.chai-checkout__thanks, .chai-checkout__sub, .chai-checkout__recap, .chai-checkout__ghost) {
+  animation: chai-win-up 0.5s var(--ease-out) both;
+}
+
+.chai-checkout__done > .chai-checkout__thanks {
+  animation-delay: 0.75s;
+}
+
+.chai-checkout__done > .chai-checkout__sub {
+  animation-delay: 0.85s;
+}
+
+.chai-checkout__done > .chai-checkout__recap {
+  animation-delay: 0.95s;
+}
+
+.chai-checkout__done > .chai-checkout__ghost {
+  animation-delay: 1.05s;
+}
+
+@keyframes chai-win-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 }
 
@@ -4030,13 +4274,27 @@ html:has(.chai-checkout) {
   .chai-checkout__panel[data-squish],
   .chai-roll > span,
   .chai-checkout__error,
-  .chai-checkout__mark,
-  .chai-map {
+  .chai-map,
+  .chai-win__ring,
+  .chai-win__ripple,
+  .chai-win__burst,
+  .chai-win__face::after,
+  .chai-win__face svg,
+  .chai-checkout__done > * {
     animation: none !important;
   }
-  .chai-checkout__mark path {
-    animation: none;
+  .chai-win__burst {
+    display: none;
+  }
+  .chai-win__arc,
+  .chai-win__tick path {
+    animation: none !important;
     stroke-dashoffset: 0;
+  }
+  /* Mama and his check fade in where they are; he still winks. */
+  .chai-win__face,
+  .chai-win__tick {
+    animation: chai-fade-in 0.4s var(--ease) both !important;
   }
   .chai-checkout__page,
   .chai-map__pin svg,

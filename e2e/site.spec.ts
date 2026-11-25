@@ -66,14 +66,6 @@ async function toShop(page: Page) {
 /** A custom property on an element (the shop's colours are on the shop, CM-011). */
 const cssVar = (page: Page, selector: string, name: string) =>
   page.locator(selector).evaluate((el, n) => Number(getComputedStyle(el).getPropertyValue(n)), name);
-/** How many pieces of tea a canvas last drew, and how many frames the tea has moved (CM-012: the tea runs in a
- *  worker, which reports them on the canvases). */
-const pieces = (page: Page, selector: string) =>
-  page.locator(selector).evaluate((c) => Number((c as HTMLElement).dataset.pieces ?? 0));
-const rainFrames = (page: Page) =>
-  page.locator('.chai-rain--front').evaluate((c) => Number((c as HTMLElement).dataset.frames ?? 0));
-const BACK = '.chai-stage .chai-rain';
-const FRONT = '.chai-rain--front';
 const opacity = (page: Page, selector: string) =>
   page.locator(selector).evaluate((el) => Number(getComputedStyle(el).opacity));
 /** How far the red pack is uncovered over the yellow one (0 … 1). */
@@ -140,8 +132,7 @@ test.describe('Chai Mama — the opening', () => {
   test('lite mode: the arrival still plays, and nothing on the page uses WebGL', async ({ page }) => {
     await page.goto('/?lite=1');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    // (The falling tea is a 2D canvas.)
-    await expect(page.locator('canvas:not(.chai-rain)')).toHaveCount(0);
+    await expect(page.locator('canvas')).toHaveCount(0);
   });
 
   test('@phone the homepage fits the phone', async ({ page }) => {
@@ -608,9 +599,6 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     const at0 = (await pack())!;
     expect(await opacity(page, '.chai-wash')).toBe(0);
     await expect(page.getByRole('heading', { level: 1, name: SLOGAN })).toBeVisible();
-    // The tea falls on the hero too (CM-012), behind its words. (A slow machine gets fewer pieces: the tea
-    // thins itself out when the frames are slow.)
-    await expect.poll(() => pieces(page, BACK), { timeout: 10_000 }).toBeGreaterThan(10);
     await toShop(page);
     await expect.poll(() => opacity(page, '.chai-wash')).toBe(1);
     await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'in');
@@ -624,10 +612,6 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     expect(at1.width).toBeGreaterThan(at0.width * 1.04);
     const panel = (await page.locator('.chai-shop__panel').boundingBox())!;
     expect(panel.x).toBeGreaterThan(at1.x + at1.width - 4);
-    // The tea is falling, and it moves.
-    await expect.poll(() => pieces(page, BACK), { timeout: 10_000 }).toBeGreaterThan(10);
-    const f0 = await rainFrames(page);
-    await expect.poll(() => rainFrames(page), { timeout: 10_000 }).toBeGreaterThan(f0);
     // Home again: all of it undone.
     await navTo(page, '');
     await expect(page).toHaveURL(/:\d+\/$/);
@@ -745,6 +729,12 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(done).toBeVisible();
     await expect(done).toContainText('Your order is ready');
     await expect(done).toContainText('+964 770 123 4567');
+    // Mama is the check mark: he winks (and again when tapped), and the sound of the order going in played.
+    const win = done.getByTestId('chai-win');
+    await expect(win).toHaveAttribute('data-chime', '');
+    await expect(win.locator('.chai-win__lid')).toHaveCSS('animation-name', 'chai-wink');
+    await win.click();
+    await expect(win).toHaveAttribute('data-winks', '1');
     await done.getByRole('button', { name: 'Back to the shop' }).click();
     await expect(co).toBeHidden();
     await expect(site(page)).not.toHaveAttribute('data-checkout', '');
@@ -776,26 +766,15 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(co).toBeHidden();
   });
 
-  test('the tea falls over every page: the sections below the hero and Our Story too (CM-012)', async ({
-    page,
-  }) => {
-    const errors = consoleErrors(page);
-    await page.goto('/');
-    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    await expect.poll(() => pieces(page, BACK), { timeout: 10_000 }).toBeGreaterThan(10);
-    // Below the picture the tea is on the front canvas, over the sections.
-    await page.getByTestId('chai-teas').scrollIntoViewIfNeeded();
-    await page.evaluate(() => {
-      window.scrollBy({ top: innerHeight * 0.6, behavior: 'instant' });
-    });
-    await expect.poll(() => pieces(page, FRONT), { timeout: 10_000 }).toBeGreaterThan(8);
-    // And over Our Story, on its page.
-    await navTo(page, 'about');
-    await expect(page).toHaveURL(/\/about$/);
-    await expect.poll(() => pieces(page, FRONT), { timeout: 10_000 }).toBeGreaterThan(8);
-    const f0 = await rainFrames(page);
-    await expect.poll(() => rainFrames(page), { timeout: 10_000 }).toBeGreaterThan(f0);
-    expect(errors).toEqual([]);
+  test('nothing falls on any page any more (CM-020): no canvas, no worker', async ({ page }) => {
+    const workers: string[] = [];
+    page.on('worker', (w) => workers.push(w.url()));
+    for (const path of ['/', '/shop', '/about']) {
+      await page.goto(path);
+      await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
+      await expect(page.locator('canvas')).toHaveCount(0);
+    }
+    expect(workers).toEqual([]);
   });
 
   test('in Kurdish the shop reads right to left, in Kurdish digits', async ({ page }) => {
@@ -812,15 +791,11 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     expect(panel.x).toBeGreaterThan(page.viewportSize()!.width * 0.4);
   });
 
-  test('reduced motion: the shop fades in, and the tea hangs still', async ({ page }) => {
+  test('reduced motion: the shop comes in without travel', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
     await toShop(page);
-    await expect.poll(() => pieces(page, BACK), { timeout: 10_000 }).toBeGreaterThan(40);
-    // Drawn where the pieces hang: no frames go by.
-    await page.waitForTimeout(600);
-    expect(await rainFrames(page)).toBe(0);
     expect(await page.locator('.chai-shop__info').evaluate((el) => getComputedStyle(el).translate)).toMatch(
       /^(none|0px)$/,
     );
