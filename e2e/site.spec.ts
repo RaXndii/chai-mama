@@ -82,6 +82,8 @@ test.describe('Chai Mama — the opening', () => {
     await toShop(page);
     await expect(shop(page).getByRole('heading', { level: 2, name: 'Heritage Blend' })).toBeVisible();
     await expect(shop(page).getByRole('img', { name: 'The Chai Mama Heritage Blend pouch' })).toBeVisible();
+    // The pack's facts are in the folded details (CM-018).
+    await shop(page).getByTestId('chai-details').click();
     await expect(shop(page).getByText('Rose petals', { exact: true })).toBeVisible();
     const results = await new AxeBuilder({ page }).include('[data-testid="chai-site"]').analyze();
     expect(
@@ -176,7 +178,7 @@ test.describe('Chai Mama — two blends, one place', () => {
     // Then it settles: the red pack where the yellow one stood, the later plates in, the words of the blend.
     await expect(hero(page)).not.toHaveAttribute('data-switching', /.*/, { timeout: 8000 });
     await expect(page.getByTestId('chai-blend-name')).toHaveText('The Lovely Blend');
-    await expect(page.getByText(LOVELY).first()).toBeVisible();
+    await expect(hero(page).getByText(LOVELY)).toBeVisible();
     expect(await reveal(page)).toBe(1);
     await expect.poll(() => opacity(page, '.chai-pouch--heritage')).toBe(0);
     await expect.poll(() => opacity(page, '.chai-layer--far > .chai-plate--dusk')).toBe(1);
@@ -206,7 +208,7 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(hero(page)).toHaveAttribute('data-time', 'day');
     await expect(hero(page)).not.toHaveAttribute('data-switching', /.*/, { timeout: 8000 });
     await expect(page.getByTestId('chai-blend-name')).toHaveText('Heritage Blend');
-    await expect(page.getByText(HERITAGE)).toBeVisible();
+    await expect(hero(page).getByText(HERITAGE)).toBeVisible();
     expect(await reveal(page)).toBe(0);
     await expect.poll(() => opacity(page, '.chai-pouch--heritage')).toBe(1);
     await expect.poll(() => opacity(page, '.chai-layer--far > .chai-plate--dusk')).toBe(0);
@@ -626,7 +628,7 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(s.getByRole('radio', { name: 'The Lovely Blend' })).toHaveAttribute('aria-checked', 'true');
     await expect(hero(page)).toHaveAttribute('data-blend', 'lovely');
     await expect(s.getByTestId('chai-shop-name')).toHaveText('The Lovely Blend');
-    await expect(s.getByText(LOVELY)).toBeVisible();
+    await expect(s.locator('.chai-shop__lede')).toHaveText(LOVELY);
     await expect(s.getByRole('img', { name: 'The Chai Mama The Lovely Blend pouch' })).toBeAttached();
     await expect.poll(() => reveal(page), { timeout: 8000 }).toBe(1);
     await expect.poll(() => cssVar(page, '.chai-shop', '--theme'), { timeout: 8000 }).toBe(1);
@@ -719,27 +721,55 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     );
   });
 
-  test('@phone the shop on a phone: the pack first, then the shop on its card, nothing wider than the screen', async ({
+  test('@phone the shop on a phone: the pack in a band, everything on one screen, a carton fans out', async ({
     page,
   }) => {
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    await toShop(page);
+    await page.getByTestId('chai-buy').tap();
+    // The sheet is there within the first part of the move (nothing to wait for).
+    await expect.poll(() => opacity(page, '.chai-shop__panel'), { timeout: 2000 }).toBe(1);
+    await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'in');
     const vw = page.viewportSize()!.width;
     const vh = page.viewportSize()!.height;
-    const pack = (await page.locator('.chai-layer--pouch').boundingBox())!;
+    // The shop's own pack stands in the band above the sheet; the picture's steps aside for it.
+    const pack = page.locator('.chai-shop__pack');
+    await expect.poll(() => pack.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    const packBox = (await pack.boundingBox())!;
     const panel = (await page.locator('.chai-shop__panel').boundingBox())!;
-    // The pack's label is still in view above the card.
-    expect(panel.y).toBeGreaterThan(pack.y + pack.height * 0.75);
-    expect(panel.y).toBeLessThan(vh);
+    expect(packBox.height).toBeGreaterThan(100);
+    expect(packBox.y + packBox.height).toBeLessThanOrEqual(panel.y + 2);
+    expect(await opacity(page, '.chai-layer--pouch')).toBe(0);
+    // All of it on one screen: nothing to scroll, nothing wider than the screen, the button in reach.
     expect(panel.x).toBeGreaterThanOrEqual(0);
     expect(panel.x + panel.width).toBeLessThanOrEqual(vw);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(
+      true,
+    );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    // The order button can be reached and is thumb-sized.
     const order = shop(page).getByTestId('chai-order');
-    await order.scrollIntoViewIfNeeded();
-    expect((await order.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    const orderBox = (await order.boundingBox())!;
+    expect(orderBox.y + orderBox.height).toBeLessThanOrEqual(vh);
+    expect(orderBox.height).toBeGreaterThanOrEqual(44);
+    // A carton: the highlight goes to it, the prices roll to it, two more pouches fan out behind the pack.
+    await expect(shop(page).locator('.chai-ghost').first()).toHaveCSS('opacity', '0');
+    await shop(page)
+      .getByRole('radio', { name: /Master carton/ })
+      .tap();
+    await expect(shop(page)).toHaveAttribute('data-option', 'carton');
+    await expect(shop(page).getByTestId('chai-unit')).toHaveText('115,500 IQD');
+    await expect(shop(page).getByTestId('chai-subtotal')).toHaveText('115,500 IQD');
+    await expect(shop(page).locator('.chai-ghost').first()).toHaveCSS('opacity', '1');
     await shop(page).getByRole('button', { name: 'One more' }).tap();
-    await expect(shop(page).getByTestId('chai-subtotal')).toHaveText('6,000 IQD');
+    await expect(shop(page).getByTestId('chai-subtotal')).toHaveText('231,000 IQD');
+    // The details unfold, and fold away again.
+    const details = shop(page).getByTestId('chai-details');
+    await details.tap();
+    await expect(details).toHaveAttribute('aria-expanded', 'true');
+    await expect(shop(page).getByRole('list', { name: "What's inside" }).getByRole('listitem')).toHaveCount(
+      5,
+    );
+    await details.tap();
+    await expect(details).toHaveAttribute('aria-expanded', 'false');
   });
 });

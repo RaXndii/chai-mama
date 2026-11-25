@@ -1274,10 +1274,11 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   position: relative;
   z-index: 2;
   display: grid;
+  align-items: center;
   /* Over the picture, from the top of the page (the picture is pinned behind it). */
   min-block-size: 100svh;
   margin-block-start: -100svh;
-  padding: calc(5.4rem + var(--safe-top)) var(--pad) calc(1.5rem + var(--safe-bottom));
+  padding: calc(4.8rem + var(--safe-top)) var(--pad) calc(1.25rem + var(--safe-bottom));
   outline: none;
 }
 
@@ -1289,123 +1290,89 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   pointer-events: none;
 }
 
+/* The shop's own pack: on a phone only (a wider screen shows the picture's). */
+.chai-shop__pack {
+  display: none;
+}
+
+/* ---- The card (CM-018): everything on one screen, beside the pack ---- */
 .chai-shop__panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 0.66fr);
-  grid-template-areas:
-    'info info'
-    'options summary'
-    'buy summary';
-  align-content: start;
-  column-gap: clamp(1rem, 0.4rem + 1.4vw, 1.9rem);
-  row-gap: clamp(0.7rem, 0.3rem + 0.7vh, 1.15rem);
-  /* Clear of the pack: it stands in the left part of the picture, a little larger now the camera has moved in. */
-  inline-size: min(52rem, 46vw);
+  gap: 0.95rem;
+  inline-size: min(31rem, 42vw);
   margin-left: auto;
-  margin-right: clamp(0rem, 3vw - 1rem, 3rem);
+  margin-right: clamp(0rem, 4vw - 1rem, 4rem);
+  padding: 1.5rem 1.6rem 1.4rem;
+  border-radius: 28px;
+  background: rgb(255 251 243 / 0.92);
+  box-shadow:
+    0 30px 60px -36px rgb(60 30 0 / 0.55),
+    inset 0 0 0 1px rgb(255 255 255 / 0.7),
+    0 0 0 1px rgb(120 70 0 / 0.08);
 }
-
-/* Each part rises into the light as the scroll brings it, one after the other (the page moves them). */
 
 .chai-shop__info {
-  grid-area: info;
-  display: grid;
-  gap: 0.45rem;
-}
-
-.chai-shop__options {
-  grid-area: options;
   display: grid;
   gap: 0.55rem;
-}
-
-.chai-shop__buy {
-  grid-area: buy;
-  display: grid;
-  justify-items: start;
-  gap: 0.55rem;
-}
-
-.chai-summary {
-  grid-area: summary;
 }
 
 .chai-shop__eyebrow {
   color: var(--shop-ink);
+  font-size: 0.7rem;
 }
 
 .chai-shop__eyebrow .chai-eyebrow__mark {
-  background: var(--shop-accent);
-  box-shadow: none;
+  background: linear-gradient(135deg, var(--shop-glow), var(--shop-accent));
+}
+
+.chai-shop__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
 }
 
 .chai-shop__name {
-  margin: 0.15rem 0 0;
-  font: 600 clamp(2.1rem, 1.3rem + 2vw, 3.6rem) / 1.04 var(--serif);
-  letter-spacing: -0.02em;
-}
-
-.chai-shop__size {
-  margin: 0;
-  color: var(--ink-2);
-  font: 400 1.05rem / 1.3 var(--serif);
-}
-
-.chai-shop__description {
-  max-inline-size: 36rem;
-  margin: 0.2rem 0 0;
-  font: 400 clamp(0.98rem, 0.9rem + 0.25vw, 1.12rem) / 1.6 var(--serif);
-}
-
-/* The pack's facts, each with its line icon, divided by hairlines. */
-.chai-shop__facts {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 0.4rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.chai-shop__facts li {
-  display: grid;
-  justify-items: start;
-  align-content: start;
-  gap: 0.3rem;
-  flex: 1 1 6.5rem;
-  padding: 0.25rem 1rem;
-  border-inline-start: 1px solid rgb(22 19 15 / 0.2);
-  font: 500 0.85rem / 1.3 var(--body);
-}
-
-.chai-shop__facts li:first-child {
-  padding-inline-start: 0;
-  border-inline-start: 0;
-}
-
-.chai-shop__facts svg {
-  color: var(--shop-ink);
-}
-
-.chai-shop__label {
   margin: 0;
   color: var(--ink);
-  font: 700 0.74rem / 1.2 var(--body);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font: italic 600 clamp(1.7rem, 1.2rem + 1.2vw, 2.3rem) / 1.05 var(--serif);
+  letter-spacing: -0.01em;
 }
 
-/* The blend switch: both packs, and a soft pill that slides to the chosen one. */
+.chai-shop__price {
+  margin: 0;
+  color: var(--shop-strong);
+  font: 600 clamp(1.1rem, 1rem + 0.4vw, 1.35rem) / 1 var(--serif);
+  white-space: nowrap;
+}
+
+/* A price that rolls: its digits keep their width, it gives a small pulse as it lands (Shop.tsx). */
+.chai-rolling {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+.chai-shop__lede {
+  margin: 0;
+  color: rgb(22 19 15 / 0.7);
+  font: 400 0.92rem / 1.5 var(--body);
+}
+
+/* The two blends: a pill each, the chosen one lifted on a white slide that glides between them. */
 .chai-picks {
+  --dir: 1;
   position: relative;
-  display: inline-grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  justify-self: start;
-  margin-block: 0.25rem 0.1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-block-start: 0.15rem;
   padding: 4px;
-  border: 1px solid rgb(22 19 15 / 0.14);
   border-radius: var(--radius-pill);
-  background: rgb(255 250 238 / 0.5);
+  background: rgb(22 19 15 / 0.06);
+}
+
+[dir='rtl'] .chai-picks {
+  --dir: -1;
 }
 
 .chai-picks__slide {
@@ -1414,117 +1381,118 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   inset-inline-start: 4px;
   inline-size: calc(50% - 4px);
   border-radius: var(--radius-pill);
-  background: var(--card);
+  background: #fff;
   box-shadow:
-    0 0 0 1.5px var(--shop-accent),
-    0 6px 16px -6px rgb(60 30 0 / 0.35);
-  translate: calc(var(--i, 0) * 100%) 0;
-  transition: translate 0.55s var(--ease-out);
-}
-
-[dir='rtl'] .chai-picks__slide {
-  translate: calc(var(--i, 0) * -100%) 0;
+    inset 0 0 0 1.5px var(--shop-accent),
+    0 6px 14px -8px rgb(60 30 0 / 0.5);
+  transform: translateX(calc(var(--i) * 100% * var(--dir)));
+  transition: transform 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
 }
 
 .chai-pick {
   position: relative;
   z-index: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.55rem;
+  justify-content: center;
+  gap: 0.5rem;
   min-block-size: 44px;
-  padding: 0.25rem 1.05rem 0.25rem 0.5rem;
+  padding: 0 0.6rem;
   border: 0;
   border-radius: var(--radius-pill);
   background: none;
-  color: var(--ink-2);
-  font: 600 0.88rem / 1.1 var(--body);
-  white-space: nowrap;
+  color: rgb(22 19 15 / 0.62);
+  font: 600 0.86rem / 1 var(--body);
   cursor: pointer;
   transition: color 0.3s var(--ease);
-}
-
-[dir='rtl'] .chai-pick {
-  padding: 0.25rem 0.5rem 0.25rem 1.05rem;
-}
-
-.chai-pick img {
-  inline-size: 24px;
-  block-size: auto;
-  filter: drop-shadow(0 3px 3px rgb(40 20 0 / 0.3));
-  transition: transform 0.45s var(--ease-out);
-}
-
-.chai-pick:hover img {
-  transform: translateY(-2px) rotate(-4deg);
 }
 
 .chai-pick[aria-checked='true'] {
   color: var(--ink);
 }
 
-.chai-pick[aria-checked='true'] img {
-  transform: scale(1.12) rotate(-5deg);
+.chai-pick img {
+  inline-size: 22px;
+  block-size: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.18));
+  transition: transform 0.4s var(--ease-out);
 }
 
-/* The two ways to buy: cards with a check that fills (not only a colour). */
+.chai-pick[aria-checked='true'] img {
+  transform: translateY(-1px) rotate(-6deg) scale(1.08);
+}
+
+.chai-shop__label {
+  margin: 0 0 0.45rem;
+  color: rgb(22 19 15 / 0.58);
+  font: 700 0.68rem / 1 var(--body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The two ways to buy: the white highlight glides to the one chosen, its icon gives a little, its check draws
+   itself, and every price rolls to its new value. */
 .chai-options {
+  --gap: 0.5rem;
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
-  gap: 0.7rem;
+  grid-auto-rows: 1fr;
+  gap: var(--gap);
+}
+
+.chai-options__glide {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: calc((100% - var(--gap)) / 2);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.5px var(--shop-accent),
+    0 12px 26px -16px rgb(80 40 0 / 0.55);
+  transform: translateY(calc(var(--o) * (100% + var(--gap))));
+  transition: transform 0.5s cubic-bezier(0.3, 1.3, 0.5, 1);
+  pointer-events: none;
 }
 
 .chai-option {
   position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.75rem;
-  min-block-size: 4.5rem;
-  padding: 0.7rem 2.2rem 0.7rem 0.9rem;
-  border: 1.5px solid rgb(22 19 15 / 0.14);
-  border-radius: 16px;
-  background: rgb(255 250 240 / 0.55);
+  min-block-size: 58px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgb(22 19 15 / 0.1);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.3);
   color: var(--ink);
   font: inherit;
   text-align: start;
   cursor: pointer;
-  transition:
-    border-color 0.3s var(--ease),
-    background-color 0.3s var(--ease),
-    box-shadow 0.35s var(--ease),
-    translate 0.25s var(--ease-out),
-    scale 0.15s var(--ease);
-}
-
-[dir='rtl'] .chai-option {
-  padding: 0.7rem 0.9rem 0.7rem 2.2rem;
-}
-
-.chai-option:hover {
-  border-color: color-mix(in oklab, var(--shop-accent) 60%, transparent);
-  translate: 0 -2px;
-}
-
-.chai-option:active {
-  scale: 0.985;
+  transition: border-color 0.3s var(--ease);
 }
 
 .chai-option[aria-checked='true'] {
-  border-color: var(--shop-accent);
-  background: var(--card);
-  box-shadow:
-    0 0 0 3px color-mix(in oklab, var(--shop-accent) 20%, transparent),
-    0 12px 26px -14px rgb(60 30 0 / 0.4);
+  border-color: transparent;
+  background: transparent;
 }
 
 .chai-option__icon {
   color: var(--shop-ink);
+  transition: transform 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.chai-option[aria-checked='true'] .chai-option__icon {
+  transform: scale(1.12) rotate(-6deg);
 }
 
 .chai-option__text {
   display: grid;
   gap: 0.15rem;
+  min-inline-size: 0;
 }
 
 .chai-option__name {
@@ -1532,300 +1500,476 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
 }
 
 .chai-option__detail {
-  color: var(--ink-2);
-  font-size: 0.8rem;
-  line-height: 1.35;
+  color: rgb(22 19 15 / 0.6);
+  font: 500 0.76rem / 1.3 var(--body);
 }
 
-.chai-option__total {
-  margin-block-start: 0.15rem;
-  font: 600 0.86rem / 1.3 var(--body);
+.chai-option__price {
+  color: rgb(22 19 15 / 0.55);
+  font: 600 0.92rem / 1 var(--serif);
+  white-space: nowrap;
+  transition: color 0.3s var(--ease);
+}
+
+.chai-option[aria-checked='true'] .chai-option__price {
+  color: var(--shop-strong);
 }
 
 .chai-option__check {
-  position: absolute;
-  inset-block-start: 0.65rem;
-  inset-inline-end: 0.65rem;
   display: grid;
   place-items: center;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  border: 1.5px solid rgb(22 19 15 / 0.3);
+  inline-size: 22px;
+  block-size: 22px;
+  border: 1.5px solid rgb(22 19 15 / 0.22);
   border-radius: 50%;
-  color: transparent;
+  color: #fff;
   transition:
     background-color 0.3s var(--ease),
-    border-color 0.3s var(--ease),
-    color 0.2s var(--ease);
+    border-color 0.3s var(--ease);
+}
+
+.chai-option__check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.35s var(--ease-out) 0.12s;
 }
 
 .chai-option[aria-checked='true'] .chai-option__check {
   border-color: var(--shop-accent);
   background: var(--shop-accent);
-  color: #fffaf0;
-  animation: chai-pop 0.4s var(--ease-out);
 }
 
-@keyframes chai-pop {
-  from {
-    scale: 0.4;
-  }
-  60% {
-    scale: 1.15;
-  }
+.chai-option[aria-checked='true'] .chai-option__check path {
+  stroke-dashoffset: 0;
 }
 
-/* How many: a stepper; the number gives a little bump as it changes. */
+/* How many, and the details folded under it. */
+.chai-shop__buy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.chai-shop__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chai-shop__label--row {
+  margin: 0;
+}
+
 .chai-qty {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
   padding: 3px;
-  border: 1px solid rgb(22 19 15 / 0.14);
   border-radius: var(--radius-pill);
-  background: rgb(255 250 240 / 0.6);
+  background: rgb(22 19 15 / 0.06);
 }
 
 .chai-qty__step {
   display: grid;
   place-items: center;
-  inline-size: 44px;
-  block-size: 44px;
-  padding: 0;
+  inline-size: 38px;
+  block-size: 38px;
   border: 0;
   border-radius: 50%;
-  background: none;
+  background: #fff;
   color: var(--ink);
+  box-shadow: 0 2px 6px -3px rgb(60 30 0 / 0.45);
   cursor: pointer;
-  transition:
-    background-color 0.2s var(--ease),
-    scale 0.15s var(--ease);
-}
-
-.chai-qty__step:hover {
-  background: color-mix(in oklab, var(--shop-accent) 16%, transparent);
+  transition: transform 0.2s var(--ease-out);
 }
 
 .chai-qty__step:active {
-  scale: 0.88;
+  transform: scale(0.9);
 }
 
 .chai-qty__step[aria-disabled='true'] {
-  opacity: 0.32;
+  opacity: 0.4;
   cursor: default;
-  background: none;
-  scale: 1;
 }
 
 .chai-qty__n {
-  min-inline-size: 2.6rem;
-  font: 600 1.05rem / 1 var(--body);
-  font-variant-numeric: tabular-nums;
+  min-inline-size: 2.2rem;
+  overflow: hidden;
   text-align: center;
+  font: 700 1rem / 1 var(--body);
+  font-variant-numeric: tabular-nums;
 }
 
-.chai-qty__n span,
-.chai-summary dd,
-.chai-summary__total strong {
+/* Each new number ticks up into place. */
+.chai-qty__n span {
   display: inline-block;
-  animation: chai-bump 0.34s var(--ease-out);
+  animation: chai-tick 0.3s var(--ease-out);
 }
 
-@keyframes chai-bump {
+@keyframes chai-tick {
   from {
-    opacity: 0.35;
-    scale: 1.16;
+    opacity: 0;
+    transform: translateY(70%);
   }
 }
 
-/* The order button, in the blend's deepest colour. Ordering is not open yet: it says so, and pressing it says
-   nothing was ordered (the cart gives a small shake). */
-.chai-order {
+.chai-details {
+  border-block: 1px solid rgb(22 19 15 / 0.1);
+}
+
+.chai-details__toggle {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  min-block-size: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 600 0.98rem / 1 var(--serif);
+  cursor: pointer;
+}
+
+/* + that turns to −. */
+.chai-details__sign {
+  position: relative;
+  inline-size: 14px;
+  block-size: 14px;
+}
+
+.chai-details__sign::before,
+.chai-details__sign::after {
+  content: '';
+  position: absolute;
+  inset: 6px 0 auto;
+  block-size: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.35s var(--ease-out);
+}
+
+.chai-details__sign::after {
+  transform: rotate(90deg);
+}
+
+.chai-details[data-open] .chai-details__sign::after {
+  transform: rotate(0deg);
+}
+
+/* It opens to its own height (no measuring): its row grows from nothing to all of it. */
+.chai-details__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s var(--ease-out);
+}
+
+.chai-details[data-open] .chai-details__body {
+  grid-template-rows: 1fr;
+}
+
+.chai-details__inner {
+  display: grid;
+  gap: 0.8rem;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.chai-details[data-open] .chai-details__inner {
+  padding-block-end: 0.9rem;
+}
+
+.chai-shop__description {
+  margin: 0;
+  color: rgb(22 19 15 / 0.72);
+  font: 400 0.88rem / 1.55 var(--body);
+}
+
+.chai-shop__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-shop__facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: rgb(22 19 15 / 0.05);
+  color: var(--shop-strong);
+  font: 600 0.74rem / 1 var(--body);
+}
+
+.chai-shop__facts svg {
+  inline-size: 18px;
+  block-size: 18px;
+  color: var(--shop-ink);
+}
+
+.chai-shop__inside {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-shop__inside .chai-ing__chip {
+  inline-size: 2.7rem;
+  block-size: 2.7rem;
+}
+
+/* What it comes to, and the order button. */
+.chai-shop__checkout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem 1rem;
+}
+
+.chai-shop__total {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.chai-shop__total .chai-shop__label {
+  margin: 0;
+}
+
+.chai-shop__sum {
+  color: var(--ink);
+  font: 600 clamp(1.35rem, 1.1rem + 0.6vw, 1.7rem) / 1 var(--serif);
+  white-space: nowrap;
+}
+
+.chai-shop__note {
+  color: rgb(22 19 15 / 0.55);
+  font: 500 0.72rem / 1.2 var(--body);
+}
+
+.chai-order {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 0.7rem;
-  justify-self: stretch;
+  gap: 0.55rem;
   min-block-size: 54px;
-  margin-block-start: 0.35rem;
-  padding: 0.6rem 1.6rem;
+  padding: 0 1.1rem;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--shop-strong);
-  color: #fbf3e2;
-  font: 600 1.02rem / 1.2 var(--body);
+  color: #fff7e6;
+  font: 600 0.96rem / 1 var(--body);
+  white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 14px 28px -14px color-mix(in oklab, var(--shop-strong) 80%, transparent);
+  box-shadow: 0 14px 28px -16px rgb(40 20 0 / 0.75);
   transition:
-    translate 0.25s var(--ease-out),
-    box-shadow 0.25s var(--ease),
-    scale 0.15s var(--ease);
+    transform 0.2s var(--ease-out),
+    filter 0.3s var(--ease);
 }
 
 .chai-order:hover {
-  translate: 0 -2px;
-  box-shadow: 0 18px 32px -14px color-mix(in oklab, var(--shop-strong) 85%, transparent);
+  filter: brightness(1.12);
 }
 
 .chai-order:active {
-  scale: 0.985;
-}
-
-.chai-order .chai-arrow {
-  transition: translate 0.3s var(--ease-out);
-}
-
-.chai-order:hover .chai-arrow {
-  translate: 3px 0;
-}
-
-[dir='rtl'] .chai-order:hover .chai-arrow {
-  translate: -3px 0;
+  transform: scale(0.98);
 }
 
 .chai-order__icon {
+  flex: none;
   color: var(--shop-glow);
 }
 
 .chai-order[data-noted] .chai-order__icon {
-  animation: chai-shake 0.5s var(--ease);
+  animation: chai-nudge 0.5s var(--ease-out);
 }
 
-@keyframes chai-shake {
-  25% {
-    rotate: -12deg;
+@keyframes chai-nudge {
+  30% {
+    transform: translateX(-3px) rotate(-8deg);
   }
-  55% {
-    rotate: 9deg;
+  60% {
+    transform: translateX(3px) rotate(6deg);
   }
-  80% {
-    rotate: -4deg;
-  }
+}
+
+.chai-order .chai-arrow {
+  flex: none;
 }
 
 .chai-order__note {
-  min-block-size: 1.3em;
+  grid-column: 1 / -1;
   margin: 0;
-  color: var(--ink-2);
-  font-size: 0.84rem;
-  line-height: 1.4;
+  color: var(--shop-ink);
+  font: 500 0.78rem / 1.4 var(--body);
+}
+
+.chai-order__note:empty {
+  display: none;
 }
 
 .chai-order__note[data-on] {
   animation: chai-rise 0.45s var(--ease-out);
 }
 
-/* What it comes to: a card in the light. */
-.chai-summary {
-  align-self: start;
-  padding: 1.15rem 1.25rem 1rem;
-  border: 1px solid rgb(255 255 255 / 0.55);
-  border-radius: 20px;
-  background: color-mix(in oklab, var(--card) 84%, transparent);
-  box-shadow: 0 22px 44px -24px rgb(70 35 0 / 0.45);
-}
-
-.chai-summary__title {
-  margin: 0 0 0.8rem;
-  font: 600 1.2rem / 1.2 var(--serif);
-}
-
-.chai-summary__rows {
-  display: grid;
-  gap: 0.6rem;
-  margin: 0;
-}
-
-.chai-summary__rows > div,
-.chai-summary__total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.chai-summary dt {
-  color: var(--ink-2);
-  font-size: 0.86rem;
-}
-
-.chai-summary dd {
-  margin: 0;
-  font: 600 0.88rem / 1.3 var(--body);
-  font-variant-numeric: tabular-nums;
-}
-
-.chai-summary__total {
-  margin-block-start: 0.95rem;
-  padding-block-start: 0.9rem;
-  border-block-start: 1px solid rgb(22 19 15 / 0.14);
-  font: 500 1.08rem / 1.2 var(--serif);
-}
-
-.chai-summary__total {
-  flex-wrap: wrap;
-  row-gap: 0.2rem;
-}
-
-.chai-summary__total strong {
-  margin-inline-start: auto;
-  white-space: nowrap;
-  font: 600 clamp(1.2rem, 1rem + 0.4vw, 1.4rem) / 1.1 var(--serif);
-  font-variant-numeric: tabular-nums;
-}
-
-.chai-summary__note {
-  margin: 0.35rem 0 0;
-  color: var(--ink-2);
-  font-size: 0.76rem;
-}
-
-/* The shop's words change as the hero's do: out while the light starts to turn, back with the new blend. */
-.chai-shop[data-copy='out']
-  :is(.chai-shop__name, .chai-shop__size, .chai-shop__description, .chai-shop__facts) {
+/* ---- A carton: two more pouches fan out behind the pack (in the picture, or the shop's own on a phone) ---- */
+.chai-ghost {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
   opacity: 0;
-  translate: 0 6px;
+  transform: scale(0.9);
+  transform-origin: 50% 100%;
+  filter: brightness(0.88);
   transition:
-    opacity 0.35s var(--ease),
-    translate 0.35s var(--ease);
+    transform 0.6s cubic-bezier(0.3, 1.35, 0.5, 1),
+    opacity 0.3s var(--ease);
+  pointer-events: none;
 }
 
-.chai-shop[data-copy='back']
-  :is(.chai-shop__name, .chai-shop__size, .chai-shop__description, .chai-shop__facts) {
-  transition:
-    opacity 0.55s var(--ease-out),
-    translate 0.6s var(--ease-out);
+.chai-shop[data-option='carton'] .chai-ghost,
+.chai-journey[data-shop='in'] .chai-hero[data-carton] .chai-ghost {
+  opacity: 1;
 }
 
-/* A narrower landscape screen: the shop takes a little more of it. */
+.chai-shop[data-option='carton'] .chai-ghost--a,
+.chai-journey[data-shop='in'] .chai-hero[data-carton] .chai-ghost--a {
+  transform: translate3d(-26%, -1%, 0) rotate(-8deg) scale(0.9);
+}
+
+.chai-shop[data-option='carton'] .chai-ghost--b,
+.chai-journey[data-shop='in'] .chai-hero[data-carton] .chai-ghost--b {
+  transform: translate3d(26%, -1%, 0) rotate(8deg) scale(0.9);
+  transition-delay: 0.06s;
+}
+
+/* A narrower landscape screen: the card takes a little more of it. */
 @media (max-width: 1180px) and (min-width: 901px) {
   .chai-shop__panel {
-    inline-size: min(56rem, 57vw);
-    grid-template-columns: minmax(0, 1fr) minmax(12.5rem, 0.6fr);
+    inline-size: min(30rem, 48vw);
   }
 }
 
-/* A phone or a tablet held upright: the pack on its rock first, then the shop on a card of the blend's light
-   that rises over the picture. */
+/* ---- A phone or a tablet held upright: the pack in a band at the top, the shop on a sheet under it ---- */
 @media (max-width: 900px) {
   .chai-shop {
-    padding: 0 0 calc(1.25rem + var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
   }
   .chai-shop__view {
-    position: static;
+    position: relative;
+    left: auto;
+    flex: 1 1 auto;
     inline-size: auto;
-    block-size: 74svh;
+    min-block-size: calc(9rem + var(--safe-top));
+  }
+  /* The shop's pack, standing on the sheet's edge; it flies in from the picture's (ChaiSite.tsx). */
+  .chai-shop__pack {
+    position: absolute;
+    inset-block-end: 0.4rem;
+    left: 50%;
+    display: block;
+    /* The band's height under the header, never taller than a pack would look; centred by `translate`, so the
+       page's fly-in (`transform`) adds to it. */
+    block-size: min(26rem, calc(100% - 4.7rem - var(--safe-top)));
+    aspect-ratio: 410 / 556;
+    translate: -50% 0;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .chai-shop__pack::after {
+    content: '';
+    position: absolute;
+    inset: auto 8% -3% 8%;
+    z-index: -1;
+    block-size: 9%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(30 15 0 / 0.45), transparent);
+  }
+  .chai-shop__pack-img {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    opacity: 0;
+    filter: drop-shadow(0 16px 16px rgb(30 15 0 / 0.28));
+    transition: opacity 0.5s var(--ease);
+  }
+  .chai-shop__pack-img[data-on] {
+    opacity: 1;
   }
   .chai-shop__panel {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'info' 'options' 'summary' 'buy';
+    gap: 0.7rem;
     inline-size: auto;
-    margin: 0 max(0.75rem, var(--pad) - 0.5rem);
-    padding: 1.4rem clamp(1rem, 4vw, 1.75rem) 1.25rem;
-    border: 1px solid rgb(255 255 255 / 0.5);
-    border-radius: 26px;
-    background: linear-gradient(180deg, var(--wash-1), color-mix(in oklab, var(--wash-2) 88%, var(--wash-1)));
-    box-shadow: 0 -18px 50px -30px rgb(40 20 0 / 0.5);
+    margin: 0;
+    padding: 1.1rem clamp(1rem, 4.5vw, 1.6rem) calc(0.9rem + var(--safe-bottom));
+    border-radius: 26px 26px 0 0;
+    background: #fbf6ec;
+    box-shadow: 0 -22px 40px -26px rgb(40 20 0 / 0.55);
+  }
+  .chai-shop__eyebrow {
+    display: none;
+  }
+  .chai-shop__info {
+    gap: 0.45rem;
+  }
+  .chai-shop__name {
+    font-size: 1.6rem;
+  }
+  .chai-shop__lede {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.84rem;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  /* "Choose your order" is read out, not shown: the two cards say it. */
+  .chai-shop__options > .chai-shop__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .chai-option {
+    min-block-size: 54px;
+    gap: 0.65rem;
+    padding: 0.45rem 0.75rem;
+  }
+  .chai-option__icon {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+  .chai-option__name {
+    font-size: 0.92rem;
+  }
+  .chai-option__detail {
+    font-size: 0.72rem;
+  }
+  .chai-details__toggle {
+    min-block-size: 42px;
+  }
+  .chai-order {
+    min-block-size: 52px;
+    padding-inline: 0.9rem;
+    font-size: 0.92rem;
+    line-height: 1.2;
+    /* A longer label (Kurdish) takes two lines rather than leaving the screen. */
+    white-space: normal;
+    text-align: center;
   }
   .chai-wash {
     inset: 0;
@@ -1836,17 +1980,6 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
       transparent 48%
     );
     transform: none;
-  }
-  .chai-shop__facts li {
-    flex-basis: 40%;
-    padding-block: 0.5rem;
-  }
-  .chai-shop__facts li:nth-child(odd) {
-    padding-inline-start: 0;
-    border-inline-start: 0;
-  }
-  .chai-summary {
-    background: color-mix(in oklab, var(--card) 92%, transparent);
   }
 }
 
@@ -2557,11 +2690,11 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
     .chai-lede,
     .chai-blend,
     .chai-shop__description,
-    .chai-shop__size,
+    .chai-shop__lede,
     .chai-pick,
     .chai-option,
     .chai-order,
-    .chai-summary,
+    .chai-shop__note,
     .chai-cta,
     .chai-story__p,
     .chai-step__body,
@@ -2723,8 +2856,6 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   .chai-leaves__sway,
   .chai-option__check,
   .chai-qty__n span,
-  .chai-summary dd,
-  .chai-summary__total strong,
   .chai-order__icon,
   .chai-order__note {
     animation: none !important;
@@ -2733,8 +2864,16 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   [data-rise] {
     transform: none;
   }
-  .chai-picks__slide {
+  /* The shop's highlights move at once; the carton's pouches only fade in; the details open at once. */
+  .chai-picks__slide,
+  .chai-options__glide,
+  .chai-option__icon,
+  .chai-details__body {
     transition: none;
+  }
+  .chai-ghost {
+    transform: none !important;
+    transition: opacity 0.3s var(--ease);
   }
   .chai-option:hover,
   .chai-order:hover {

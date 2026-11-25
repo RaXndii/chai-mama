@@ -1,5 +1,30 @@
 # Decisions
 
+## CM-018 · 2026-11-25 · the shop on one screen
+
+The owner: going to the shop "you have to wait like 3 seconds", then scroll before everything shows; it should all
+be on one screen, with a cool change between a single pouch and a master carton and the price changing with it —
+"$1000 worth", and never heavy or laggy. With a picture of a compact phone shop as inspiration.
+
+- **Faster:** the move to the shop is 0.8 s (0.6 s back) and the shop is in place from its first part: the whole
+  shop is there about 0.4–0.5 s after the tap (it was about 1.1 s, then a scroll on a phone). The tea in the shop
+  falls no thicker than on the hero.
+- **One screen.** On a phone: the pack in a band at the top, the shop on a cream sheet under it — the blend and
+  its price, its line, the switch between the blends, the two ways to buy, how many, the details (folded), what it
+  comes to and the order button; nothing to scroll from 360 × 640 up. On a wider screen: one card beside the pack.
+- **The pack on a phone:** the picture's pack cannot be framed in the band (a phone's cut plates would not cover
+  the screen that far back), so the shop has its own copy that flies out of the picture's pack into the band
+  (measured once per move; a transform), the picture's stepping aside for it.
+- **Pouch or carton:** a white highlight glides to the one chosen, its icon gives a little, its check draws
+  itself; every price rolls to its new value and pulses as it lands (text written per frame on a small element,
+  no React renders); for a carton two more pouches fan out behind the pack (in the picture on a wider screen, in
+  the band on a phone). How many ticks up into place.
+- **Product details** fold open to the blend's description, the pack's facts and the ingredient photographs.
+- Only transforms and opacity move. Under reduced motion the highlights move at once, the prices are written at
+  once, the carton's pouches only fade.
+- New words: "Product details" «وردەکاریی بەرهەم» (Kurdish for the owner to check). The order summary card's
+  labels went (the price, the subtotal and "Delivery: Not included" say it).
+
 ## CM-017 · 2026-11-24 · the iPhone's whole screen, and the teas under the hero
 
 The owner, on an iPhone: the browser's grey bars above and below interrupted the site ("it should feel like you

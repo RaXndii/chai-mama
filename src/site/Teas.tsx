@@ -147,7 +147,7 @@ const PHOTOS: Record<IngredientId, string> = {
 };
 
 /** An ingredient on its round chip: the owner's photograph of it. */
-function Ingredient({ id }: { id: IngredientId }) {
+export function Ingredient({ id }: { id: IngredientId }) {
   return (
     <span className="chai-ing__chip" aria-hidden="true">
       <img src={PHOTOS[id]} alt="" width={192} height={192} loading="lazy" decoding="async" />

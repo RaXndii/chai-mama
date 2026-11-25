@@ -39,7 +39,7 @@ import About from './About';
 import ChaiNav from './ChaiNav';
 import { Arrow } from './icons';
 import { NAV_PAGE, type NavSection } from './nav';
-import Shop from './Shop';
+import Shop, { PackGhosts } from './Shop';
 import Teas from './Teas';
 import { startTeaRain, type TeaRain } from './teaRain';
 import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
@@ -81,10 +81,11 @@ const smooth = smoothstep;
 const SHOP_PUSH = 0.24;
 /** Where on the way to the shop (0 … 1) each of its parts starts to rise in: the tea, its ways to buy, how
  *  many, what it comes to (in the order Shop.tsx draws them). */
-const SHOP_FROM = [0.4, 0.5, 0.58, 0.54];
-/** The move from the hero to the shop, and back (ms; a short fade under reduced motion). */
-const SHOP_IN_MS = 1250;
-const SHOP_OUT_MS = 950;
+const SHOP_FROM = [0.08, 0.16, 0.24, 0.3];
+/** The move from the hero to the shop, and back (ms; a short fade under reduced motion). The shop is there from
+ *  its first quarter (CM-018): nothing to wait for. */
+const SHOP_IN_MS = 800;
+const SHOP_OUT_MS = 600;
 const CALM_SHOP_MS = 420;
 /** Slow to start, slow to settle. */
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
@@ -178,6 +179,8 @@ export default function ChaiSite() {
   const initialBlendRef = useRef(blend);
   const wanted = useRef<BlendId>(blend);
   const [switching, setSwitching] = useState(false);
+  /** A carton is chosen in the shop: two more pouches fan out behind the pack (CM-018). */
+  const [carton, setCarton] = useState(false);
   /** Once a switch has happened, the words come back without the entrance's stagger. */
   const [switched, setSwitched] = useState(false);
   // The other time of day's plates load once the page is at rest (or at once when the visitor asks).
@@ -466,7 +469,7 @@ export default function ChaiSite() {
     }
     const cover = pg === 'home' ? Math.min(1, Math.max(0, (heroH.current - top) / vh)) : 1;
     rain.current?.setLevels({
-      back: cover > 0 ? 0.72 + 0.28 * shopK.current : 0,
+      back: cover > 0 ? 0.72 : 0,
       sections: 1 - cover,
       dark: 0,
     });
@@ -525,15 +528,30 @@ export default function ChaiSite() {
       still || card ? 'none' : `translate3d(${((1 - p) * 18).toFixed(2)}%, 0, 0)`,
     );
     const panel = shopEl.current?.querySelector<HTMLElement>('.chai-shop__panel');
+    const pouch = layerEls.current[LAYERS.findIndex((l) => l.name === 'pouch')];
     if (card) {
-      const k = clamp01((p - 0.35) * 1.8);
-      set(panel, k, still || k >= 1 ? 'none' : `translate3d(0, ${((1 - k) * 0.18 * vh).toFixed(1)}px, 0)`);
+      // The sheet rises from the bottom; the pack steps out of the picture into the band above it (its own
+      // copy flies from where the picture's pack stands, which steps aside for it).
+      const k = clamp01((p - 0.04) * 2.6);
+      set(panel, k, still || k >= 1 ? 'none' : `translate3d(0, ${((1 - k) * 0.14 * vh).toFixed(1)}px, 0)`);
+      if (pouch) pouch.style.opacity = p > 0 ? '0' : '';
+      const pack = shopEl.current?.querySelector<HTMLElement>('.chai-shop__pack');
+      if (pack && p > 0) {
+        if (!packFlip.current) packFlip.current = measurePackFlip(pack);
+        const f = still ? 1 : smooth(p, 0, 0.85);
+        const { dx, dy, s } = packFlip.current;
+        pack.style.transform =
+          f >= 1
+            ? 'none'
+            : `translate3d(${(dx * (1 - f)).toFixed(1)}px, ${(dy * (1 - f)).toFixed(1)}px, 0) scale(${(1 + (s - 1) * (1 - f)).toFixed(4)})`;
+      }
       return;
     }
+    if (pouch) pouch.style.opacity = '';
     set(panel, 1, 'none');
     const parts = panel?.children ?? [];
     Array.from(parts).forEach((part, i) => {
-      const k = clamp01((p - (SHOP_FROM[i] ?? 0.5)) * 4);
+      const k = clamp01((p - (SHOP_FROM[i] ?? 0.5)) * 5);
       set(
         part as HTMLElement,
         k,
@@ -541,15 +559,43 @@ export default function ChaiSite() {
       );
     });
   };
+  /**
+   * Where the picture's pack stands at the hero, relative to where the shop's pack sits in the band (a phone):
+   * the move it makes from one to the other. Measured once per move (its layout box, not a frame of it).
+   */
+  const packFlip = useRef<{ dx: number; dy: number; s: number } | null>(null);
+  const measurePackFlip = (pack: HTMLElement) => {
+    const l = layersRef.current.find((x) => x.name === 'pouch')!;
+    const from = layerPlacement(l, basePose.current, window.innerWidth, window.innerHeight);
+    const fw = l.w * from.s;
+    const fh = l.h * from.s;
+    const before = pack.style.transform;
+    pack.style.transform = 'none';
+    const to = pack.getBoundingClientRect();
+    pack.style.transform = before;
+    if (!to.height) return { dx: 0, dy: 0, s: 1 };
+    return {
+      dx: from.x + fw / 2 - (to.left + to.width / 2),
+      dy: from.y + fh / 2 - (to.top + to.height / 2),
+      s: fh / to.height,
+    };
+  };
+  useEffect(() => {
+    const reset = () => (packFlip.current = null);
+    window.addEventListener('resize', reset);
+    return () => window.removeEventListener('resize', reset);
+  }, []);
   const setShop = (to: number) => {
     const el = journeyEl.current;
     const p = Math.round(Math.min(1, Math.max(0, to)) * 1000) / 1000;
     if (!el || p === lastShop.current) return;
     lastShop.current = p;
-    shopMove(p, window.innerHeight);
-    // Off: the shop is not there at all (the homepage and Our Story); in: the hero's words are gone.
+    // Off: the shop is not there at all (the homepage and Our Story); in: the hero's words are gone. (Set first:
+    // the shop is laid out before its parts are moved.)
     const side = p === 0 ? 'off' : p > 0.55 ? 'in' : 'out';
     if (el.dataset.shop !== side) el.dataset.shop = side;
+    if (p === 0) packFlip.current = null;
+    shopMove(p, window.innerHeight);
     const k = smooth(p, 0, 1);
     if (Math.abs(k - shopK.current) > 1e-4) {
       shopK.current = k;
@@ -846,6 +892,7 @@ export default function ChaiSite() {
             data-blend={blend}
             data-time={time}
             data-switching={switching || undefined}
+            data-carton={carton || undefined}
             data-copy={copyState}
             data-clarity={clarity || undefined}
             data-packs={BLENDS.filter((id) => packsOk[id]).join(' ')}
@@ -880,20 +927,24 @@ export default function ChaiSite() {
                   ) : l.name === 'pouch' ? (
                     // Both packs in one box: Heritage Blend under, The Lovely Blend over it, uncovered from the
                     // sun's side by a soft edge as the time of day turns (`--reveal`).
-                    BLENDS.map((id) => (
-                      <span key={id} className={`chai-pouch chai-pouch--${id}`}>
-                        <img
-                          src={bothTimes || id === initialBlendRef.current ? POUCHES[id][size] : undefined}
-                          alt=""
-                          decoding="async"
-                          draggable={false}
-                          data-time={timeOf(id)}
-                          onLoad={() => packState(id, true)}
-                          onError={() => packState(id, false)}
-                          {...(id === initialBlendRef.current ? { 'data-first': '' } : {})}
-                        />
-                      </span>
-                    ))
+                    <>
+                      {/* A carton chosen in the shop: two more pouches fan out behind (CM-018). */}
+                      <PackGhosts blend={blend} />
+                      {BLENDS.map((id) => (
+                        <span key={id} className={`chai-pouch chai-pouch--${id}`}>
+                          <img
+                            src={bothTimes || id === initialBlendRef.current ? POUCHES[id][size] : undefined}
+                            alt=""
+                            decoding="async"
+                            draggable={false}
+                            data-time={timeOf(id)}
+                            onLoad={() => packState(id, true)}
+                            onError={() => packState(id, false)}
+                            {...(id === initialBlendRef.current ? { 'data-first': '' } : {})}
+                          />
+                        </span>
+                      ))}
+                    </>
                   ) : l.name === 'far' ? (
                     <>
                       {plate('far', base)}
@@ -993,6 +1044,7 @@ export default function ChaiSite() {
             copyState={copyState}
             onChoose={choose}
             onBlendKey={onBlendKey}
+            onOption={(id) => setCarton(id === 'carton')}
             sectionRef={shopEl}
           />
         </div>

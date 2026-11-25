@@ -92,12 +92,11 @@ export interface ChaiMamaContent {
     quantity: string;
     less: string;
     more: string;
-    summary: string;
-    unit: string;
+    /** The folded details: the blend's words, the pack's facts, what is in it. */
+    details: string;
     delivery: string;
     deliveryValue: string;
     subtotal: string;
-    subtotalNote: string;
     cta: string;
     ctaNote: string;
   };
@@ -220,12 +219,10 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       quantity: 'Quantity',
       less: 'One less',
       more: 'One more',
-      summary: 'Order summary',
-      unit: 'Unit price',
+      details: 'Product details',
       delivery: 'Delivery',
       deliveryValue: 'Not included',
       subtotal: 'Subtotal',
-      subtotalNote: 'Before delivery',
       cta: 'Ordering opens soon',
       ctaNote: 'Ordering on the site isn’t open yet, so nothing has been ordered.',
     },
@@ -355,12 +352,10 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       quantity: 'ژمارە',
       less: 'یەکێک کەمتر',
       more: 'یەکێک زیاتر',
-      summary: 'پوختەی داواکاری',
-      unit: 'نرخی یەکە',
+      details: 'وردەکاریی بەرهەم',
       delivery: 'گەیاندن',
       deliveryValue: 'تێیدا نییە',
       subtotal: 'کۆی گشتی',
-      subtotalNote: 'بەبێ گەیاندن',
       cta: 'داواکردن بەم زووانە دەکرێتەوە',
       ctaNote: 'داواکردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە هیچ داواکارییەک نەکرا.',
     },
