@@ -1,0 +1,14 @@
+{
+  "name": "Chai Mama",
+  "short_name": "Chai Mama",
+  "description": "Chai Mama black tea: Heritage Blend and The Lovely Blend.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dfe5e7",
+  "theme_color": "#9fa8b8",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
