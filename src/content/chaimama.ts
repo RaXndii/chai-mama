@@ -143,6 +143,39 @@ export interface ChaiMamaContent {
       close: string;
     };
   };
+  /** Share your experience (CM-023): between the teas and Our Story. */
+  share: {
+    eyebrow: string;
+    title: string;
+    lede: string;
+    name: string;
+    email: string;
+    location: string;
+    locationHint: string;
+    optional: string;
+    tried: string;
+    both: string;
+    other: string;
+    rate: string;
+    slide: string;
+    /** What a rating means, 1 … 10. */
+    bands: readonly [string, string, string, string, string, string, string, string, string, string];
+    thoughts: string;
+    thoughtsHint: string;
+    photo: string;
+    photoChange: string;
+    photoRemove: string;
+    send: string;
+    sending: string;
+    errors: { name: string; email: string; tried: string; rating: string; photo: string; send: string };
+    done: {
+      sent: (name: string) => string;
+      sentBody: string;
+      ready: (name: string) => string;
+      readyBody: string;
+      again: string;
+    };
+  };
   /**
    * About (CM-011): the owner's own words about the brand and how its tea is made (2026-10-22). It takes the
    * place of CM-007's curtain footer at the end of the page.
@@ -317,6 +350,55 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
         ready: 'Your order is ready',
         readyBody: 'Ordering on the site isn’t open yet, so it hasn’t been sent.',
         close: 'Back to the shop',
+      },
+    },
+    share: {
+      eyebrow: 'Share your experience',
+      title: 'How was your tea?',
+      lede: 'A minute of your thoughts helps Chai Mama make every cup better.',
+      name: 'Your name',
+      email: 'Email',
+      location: 'Location',
+      locationHint: 'City',
+      optional: 'optional',
+      tried: 'Which did you try?',
+      both: 'Both',
+      other: 'Other',
+      rate: 'Your rating',
+      slide: 'Slide to rate',
+      bands: [
+        'Not for me',
+        'Not for me',
+        'Could be better',
+        'Could be better',
+        'Good',
+        'Good',
+        'Really good',
+        'Really good',
+        'Lovely',
+        'The perfect cup',
+      ],
+      thoughts: 'Your thoughts',
+      thoughtsHint: 'What did you like? What would make it better?',
+      photo: 'Add a photo',
+      photoChange: 'Change photo',
+      photoRemove: 'Remove photo',
+      send: 'Share',
+      sending: 'Sharing…',
+      errors: {
+        name: 'Write your name.',
+        email: 'Check the email.',
+        tried: 'Choose which you tried.',
+        rating: 'Slide to give your rating.',
+        photo: 'That photo couldn’t be used. Try another.',
+        send: 'It didn’t go through. Try again in a moment.',
+      },
+      done: {
+        sent: (name) => `Thank you, ${name}!`,
+        sentBody: 'Your words mean a lot to Chai Mama.',
+        ready: (name) => `Thank you, ${name}!`,
+        readyBody: 'Sharing on the site isn’t open yet, so it hasn’t been sent.',
+        again: 'Share another',
       },
     },
     about: {
@@ -496,6 +578,55 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
         ready: 'داواکارییەکەت ئامادەیە',
         readyBody: 'داواکردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە نەنێردراوە.',
         close: 'گەڕانەوە بۆ فرۆشگا',
+      },
+    },
+    share: {
+      eyebrow: 'ئەزموونەکەت بڵاو بکەرەوە',
+      title: 'چایەکەت چۆن بوو؟',
+      lede: 'یەک خولەک لە بۆچوونەکانت یارمەتی چای مامە دەدات هەموو پەرداخێک باشتر بکات.',
+      name: 'ناوت',
+      email: 'ئیمەیڵ',
+      location: 'شوێن',
+      locationHint: 'شار',
+      optional: 'ئارەزوومەندانە',
+      tried: 'کامەیانت تاقی کردەوە؟',
+      both: 'هەردووکیان',
+      other: 'تر',
+      rate: 'هەڵسەنگاندنت',
+      slide: 'بۆ هەڵسەنگاندن ڕای بکێشە',
+      bands: [
+        'بەدڵم نەبوو',
+        'بەدڵم نەبوو',
+        'دەکرا باشتر بێت',
+        'دەکرا باشتر بێت',
+        'باشە',
+        'باشە',
+        'زۆر باشە',
+        'زۆر باشە',
+        'نایابە',
+        'پەرداخێکی تەواو',
+      ],
+      thoughts: 'بۆچوونەکانت',
+      thoughtsHint: 'چیت پێ خۆش بوو؟ چی باشتری دەکات؟',
+      photo: 'وێنەیەک زیاد بکە',
+      photoChange: 'گۆڕینی وێنە',
+      photoRemove: 'لابردنی وێنە',
+      send: 'بڵاوی بکەرەوە',
+      sending: 'دەنێردرێت…',
+      errors: {
+        name: 'ناوت بنووسە.',
+        email: 'ئیمەیڵەکە بپشکنە.',
+        tried: 'ئەوەی تاقیت کردەوە هەڵبژێرە.',
+        rating: 'بۆ هەڵسەنگاندن ڕای بکێشە.',
+        photo: 'ئەو وێنەیە بەکار نایەت. یەکێکی تر تاقی بکەرەوە.',
+        send: 'نەنێردرا. کەمێکی تر هەوڵ بدەرەوە.',
+      },
+      done: {
+        sent: (name) => `سوپاس، ${name}!`,
+        sentBody: 'قسەکانت بۆ چای مامە زۆر بەنرخن.',
+        ready: (name) => `سوپاس، ${name}!`,
+        readyBody: 'ناردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە نەنێردراوە.',
+        again: 'یەکێکی تر',
       },
     },
     about: {

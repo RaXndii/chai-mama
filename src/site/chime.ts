@@ -128,3 +128,32 @@ export function playClink(): void {
   g.connect(c.destination);
   clink(c, g, c.currentTime + 0.01);
 }
+
+/**
+ * A soft tick for each step of the rating (CM-023), a little higher at each: sliding up the scale sounds like
+ * climbing it. At the top (10) it rings like a glass. Quiet, and only once the visitor has touched the slider.
+ */
+export function playTick(step: number, top = 10): void {
+  const c = audio();
+  if (!c) return;
+  if (c.state === 'suspended') void c.resume().catch(() => {});
+  if (c.state !== 'running') return;
+  const t = c.currentTime + 0.005;
+  const g = c.createGain();
+  g.connect(c.destination);
+  if (step >= top) {
+    g.gain.value = 0.5;
+    bell(c, g, t, 1568, 0.22, 1.1);
+    clink(c, g, t + 0.08);
+    return;
+  }
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(440 * 2 ** (step / 12 + 0.25), t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.07, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(g);
+  o.start(t);
+  o.stop(t + 0.09);
+}

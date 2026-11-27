@@ -37,6 +37,7 @@ import ChaiNav from './ChaiNav';
 import { Arrow } from './icons';
 import { NAV_PAGE, type NavSection } from './nav';
 import Shop, { PackGhosts } from './Shop';
+import Share from './Share';
 import Teas from './Teas';
 import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
 import './chai.css';
@@ -1015,6 +1016,9 @@ export default function ChaiSite() {
 
         {/* The teas: each blend, what is in it, and Buy now (CM-017). */}
         <Teas lang={lang} onBuy={buy} onStory={() => goPage('about')} />
+
+        {/* Share your experience, between the teas and Our Story (CM-023). */}
+        <Share lang={lang} />
       </main>
 
       {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}

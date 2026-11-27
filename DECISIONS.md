@@ -1,5 +1,29 @@
 # Decisions
 
+## CM-023 · 2026-11-27 · share your experience
+
+The owner wants a "Share your experience" part, better than the one on their old site: a name, an email and a
+place if they like, which tea they tried (Heritage Blend, The Lovely Blend, both, or another), a rating out of
+ten given by sliding, their thoughts, and a photo if they like — in the site's own style, with a cool animation
+for the rating. Its place: after the teas, before Our Story.
+
+- **Where:** a cream card on the teas' gold, between the teas and Our Story (the scroll runs on through it into
+  the ink); not on the shop.
+- **Asked:** name (needed); email, place (a city) — both optional, the email checked only when given; which
+  tea — four cards with the packs themselves, both packs, or a glass; the rating (needed); thoughts (optional,
+  600 characters); a photo (optional), made small on the phone before it is sent (1600 px, JPEG).
+- **The rating:** a track to slide along with a thumb that snaps from step to step; a tea glass beside the
+  number fills with each step, its surface moving; the number springs to its value with a word for it (Not for
+  me … Good … Lovely … The perfect cup); each step a soft tick a little higher than the last (and a buzz on
+  phones that have one). At ten the glass steams, sparkles, tips a little and rings. It starts unrated ("Slide
+  to rate"); under it is a real slider, for the keyboard and screen readers; right to left in Kurdish.
+- **Sent:** Mama winks his thanks with the order's sound (CM-020), "Thank you, {name}!", and "Share another".
+- **Where it goes:** to the shop's feedback address when the site is built with one (`VITE_FEEDBACK_ENDPOINT`:
+  a URL that takes a form, with the photo as a file). Until then nothing is sent, and the thanks says so.
+- The owner mentioned a code or picture for the rating to take inspiration from; none had come yet, so this is
+  the site's own design, ready to be brought closer to it.
+- New Kurdish words are for the owner to check.
+
 ## CM-022 · 2026-11-27 · the checkout is the whole screen on a phone
 
 The owner, from an iPhone in Kurdish: after Order now the questions came up as a sheet, and with the keyboard up

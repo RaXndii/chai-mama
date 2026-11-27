@@ -787,6 +787,82 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(co).toBeHidden();
   });
 
+  test('share your experience: which tea, a rating slid along a glass of tea, a photo, and Mama thanks you (CM-023)', async ({
+    page,
+  }) => {
+    const errors = consoleErrors(page);
+    await page.goto('/');
+    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
+    const share = page.getByTestId('chai-share');
+    // Between the teas and Our Story.
+    const order = await page.evaluate(() =>
+      ['chai-teas', 'chai-share', 'chai-end'].map(
+        (id) => document.getElementById(id)!.getBoundingClientRect().top,
+      ),
+    );
+    expect(order[0]).toBeLessThan(order[1]!);
+    expect(order[1]).toBeLessThan(order[2]!);
+    await share.scrollIntoViewIfNeeded();
+    await expect(share.getByRole('heading', { level: 2, name: 'How was your tea?' })).toBeVisible();
+    // Name, which tea and a rating are needed; the email and the place are not.
+    await share.getByTestId('chai-share-send').click();
+    await expect(share.getByRole('alert')).toHaveText('Write your name.');
+    await share.getByTestId('chai-share-name').fill('Rahand Mhamad');
+    await share.getByTestId('chai-share-send').click();
+    await expect(share.getByRole('alert')).toHaveText('Choose which you tried.');
+    await share.getByTestId('chai-share-tried-lovely').click();
+    await expect(share.getByTestId('chai-share-tried-lovely')).toHaveAttribute('aria-checked', 'true');
+    await share.getByTestId('chai-share-send').click();
+    await expect(share.getByRole('alert')).toHaveText('Slide to give your rating.');
+    // The rating: unrated at first; by the keyboard a step at a time; slid along the track by the pointer.
+    const rating = share.getByTestId('chai-share-rating');
+    await expect(rating).toHaveAttribute('aria-valuetext', 'Slide to rate');
+    await rating.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(rating).toHaveAttribute('aria-valuetext', '1 / 10 — Not for me');
+    await page.keyboard.press('ArrowRight');
+    await expect(rating).toHaveAttribute('aria-valuetext', '2 / 10 — Not for me');
+    const track = (await share.locator('.chai-rate__track').boundingBox())!;
+    await page.mouse.move(track.x + 30, track.y + track.height / 2);
+    await page.mouse.down();
+    // The sixth step: its notch (the thumb is 48 px wide).
+    const sixth = track.x + 24 + (5 / 9) * (track.width - 48);
+    await page.mouse.move(sixth, track.y + track.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(rating).toHaveValue('6');
+    await expect(share.locator('.chai-rate__word')).toHaveText('Good');
+    // At ten: the perfect cup.
+    await page.mouse.move(sixth, track.y + track.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(track.x + track.width - 2, track.y + track.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect(rating).toHaveValue('10');
+    await expect(share.locator('.chai-rate')).toHaveAttribute('data-top', 'true');
+    await expect(share.locator('.chai-rate__word')).toHaveText('The perfect cup');
+    // A photo: shown small, and can be taken away again.
+    await share.getByTestId('chai-share-photo').setInputFiles({
+      name: 'cup.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+eQaAAVdAqTP7UgSAAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    });
+    await expect(share.locator('.chai-share__thumb img')).toBeVisible();
+    await share.getByRole('button', { name: 'Remove photo' }).click();
+    await expect(share.locator('.chai-share__thumb')).toHaveCount(0);
+    await share.getByTestId('chai-share-thoughts').fill('Lovely after dinner.');
+    await share.getByTestId('chai-share-send').click();
+    // Sent (or, without a feedback address yet, said plainly that it was not): Mama winks his thanks.
+    const done = share.getByTestId('chai-share-done');
+    await expect(done).toContainText('Thank you, Rahand!');
+    await expect(done).toContainText('hasn’t been sent');
+    await expect(done.getByTestId('chai-win')).toBeVisible();
+    await done.getByRole('button', { name: 'Share another' }).click();
+    await expect(share.getByTestId('chai-share-name')).toHaveValue('');
+    expect(errors).toEqual([]);
+  });
+
   test('nothing falls on any page any more (CM-020): no canvas, no worker', async ({ page }) => {
     const workers: string[] = [];
     page.on('worker', (w) => workers.push(w.url()));
