@@ -1,5 +1,37 @@
 # Decisions
 
+## CM-024 · 2026-11-27 · the share card after the owner's mock, and the reviews in a folder of glass
+
+The owner sent a mock of a better "How was your tea?" (a picture across the top, the two packs large, a real
+glass of tea for the rating with a slim slider, a "memory of tea" with a photo, a consent to show it) and asked
+for the reviews to be shown by it — like the glass-folder component they sent: a small profile for each review
+(name, place, rating, a few words), the folder opening to show them, a photo revealed when there is one; "make
+something cool and not out of place". The email must stay truly optional.
+
+- **The card:** the valley's picture across the top — the owner's own plates (far, sky, rock) with the Heritage
+  Blend pack on its rock and a glass of tea beside it (the mock's glass, laid on with its white as the photo's own
+  light so the glass shows the hills through it; `share-banner-*.webp`); steam rising over it; the question over
+  the sky. Then name and email side by side, place, the two packs large with a tick, "both" and "other" small, the
+  rating, thoughts, the memory of tea (two prints, the top one the visitor's own photo once added, developing like
+  a print) and the consent to show it, and "Share your experience".
+- **The rating** is a real glass of tea: the mock's glass, full and (made from it) empty, the full one shown up to
+  the tea's level, which rises with the slider (a line of light on its surface, steam once it is high, sparks
+  and a ring at ten); the number large in gold, a word for it with a gold swash; a slim track with a tick at
+  each step, 1 and 10 at its ends (left to right in Kurdish too, as in the mock).
+- **The reviews, in a folder of warm glass** (after the owner's component, in the site's own CSS and React: no
+  Tailwind, no generated artwork — the back panel holds the valley's picture). Each review is a sheet of the
+  pack's paper: an initial in a ring of the tea tried (gold, red, both, brown), the name, the place, the rating
+  with a little glass filled to it, three lines of words, and, when there is a photo, a small print peeking from
+  its corner. A mouse tips the glass toward you; a tap opens it and the newest four rise out and fan; choosing one
+  opens it — the photo developing, the date, the tea tried, all the words — and from there every review can be
+  read in turn. "+" goes back up to the card. A review just shared drops into the folder and the count rolls on.
+- **Nothing made up.** The reviews are the shop's published ones, from `VITE_REVIEWS_URL` when the site has one
+  (a JSON list; a review shows only with a name and a rating from 1 to 10, and a photo only from an https or image
+  address) — none until then — and the ones shared from this device, kept on it, marked "Yours", and "Not sent
+  yet — only you can see it" while the shop has no feedback address. The visitor can remove their own.
+- **The email:** asked for and checked only when something is written in it; left empty, nothing is asked and
+  the review goes without one (tested).
+
 ## CM-023 · 2026-11-27 · share your experience
 
 The owner wants a "Share your experience" part, better than the one on their old site: a name, an email and a

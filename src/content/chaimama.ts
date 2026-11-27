@@ -149,7 +149,9 @@ export interface ChaiMamaContent {
     title: string;
     lede: string;
     name: string;
+    namePh: string;
     email: string;
+    emailPh: string;
     location: string;
     locationHint: string;
     optional: string;
@@ -158,13 +160,16 @@ export interface ChaiMamaContent {
     other: string;
     rate: string;
     slide: string;
+    slideHint: string;
     /** What a rating means, 1 … 10. */
     bands: readonly [string, string, string, string, string, string, string, string, string, string];
     thoughts: string;
     thoughtsHint: string;
+    memory: string;
     photo: string;
     photoChange: string;
     photoRemove: string;
+    consent: string;
     send: string;
     sending: string;
     errors: { name: string; email: string; tried: string; rating: string; photo: string; send: string };
@@ -175,6 +180,27 @@ export interface ChaiMamaContent {
       readyBody: string;
       again: string;
     };
+  };
+  /** The reviews' folder (CM-024), by the share card. */
+  reviews: {
+    title: string;
+    count: (n: string, one: boolean) => string;
+    empty: string;
+    emptyMeta: string;
+    first: string;
+    add: string;
+    open: string;
+    close: string;
+    average: (x: string) => string;
+    hasPhoto: string;
+    mine: string;
+    unsent: string;
+    more: (n: string) => string;
+    prev: string;
+    next: string;
+    shut: string;
+    remove: string;
+    tried: string;
   };
   /**
    * About (CM-011): the owner's own words about the brand and how its tea is made (2026-10-22). It takes the
@@ -355,9 +381,11 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
     share: {
       eyebrow: 'Share your experience',
       title: 'How was your tea?',
-      lede: 'A minute of your thoughts helps Chai Mama make every cup better.',
+      lede: 'Every cup has a story. Share yours with us.',
       name: 'Your name',
+      namePh: 'Your full name',
       email: 'Email',
+      emailPh: 'you@mail.com',
       location: 'Location',
       locationHint: 'City',
       optional: 'optional',
@@ -366,6 +394,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       other: 'Other',
       rate: 'Your rating',
       slide: 'Slide to rate',
+      slideHint: 'Slide to rate',
       bands: [
         'Not for me',
         'Not for me',
@@ -380,10 +409,12 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       ],
       thoughts: 'Your thoughts',
       thoughtsHint: 'What did you like? What would make it better?',
+      memory: 'Add a memory of your tea',
       photo: 'Add a photo',
       photoChange: 'Change photo',
       photoRemove: 'Remove photo',
-      send: 'Share',
+      consent: 'I agree to my photo being shown in Chai Mama’s reviews.',
+      send: 'Share your experience',
       sending: 'Sharing…',
       errors: {
         name: 'Write your name.',
@@ -400,6 +431,26 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
         readyBody: 'Sharing on the site isn’t open yet, so it hasn’t been sent.',
         again: 'Share another',
       },
+    },
+    reviews: {
+      title: 'What people say',
+      count: (n, one) => `${n} ${one ? 'review' : 'reviews'}`,
+      empty: 'No reviews yet',
+      emptyMeta: 'Be the first',
+      first: 'Be the first to share — your review will appear here.',
+      add: 'Share yours',
+      open: 'Open the reviews',
+      close: 'Close the reviews',
+      average: (x) => `${x}/10 on average`,
+      hasPhoto: 'With a photo',
+      mine: 'Yours',
+      unsent: 'Not sent yet — only you can see it',
+      more: (n) => `+${n} more`,
+      prev: 'Previous review',
+      next: 'Next review',
+      shut: 'Close',
+      remove: 'Remove',
+      tried: 'Tried',
     },
     about: {
       title: 'Our Story',
@@ -583,9 +634,11 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
     share: {
       eyebrow: 'ئەزموونەکەت بڵاو بکەرەوە',
       title: 'چایەکەت چۆن بوو؟',
-      lede: 'یەک خولەک لە بۆچوونەکانت یارمەتی چای مامە دەدات هەموو پەرداخێک باشتر بکات.',
+      lede: 'هەر پیاڵەیەک چیرۆکێکی هەیە. چیرۆکەکەت لەگەڵمان هاوبەش بکە.',
       name: 'ناوت',
+      namePh: 'ناوت بنووسە',
       email: 'ئیمەیڵ',
+      emailPh: 'you@mail.com',
       location: 'شوێن',
       locationHint: 'شار',
       optional: 'ئارەزوومەندانە',
@@ -594,6 +647,7 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       other: 'تر',
       rate: 'هەڵسەنگاندنت',
       slide: 'بۆ هەڵسەنگاندن ڕای بکێشە',
+      slideHint: 'سلایدەرەکە ڕابکێشە',
       bands: [
         'بەدڵم نەبوو',
         'بەدڵم نەبوو',
@@ -608,10 +662,12 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       ],
       thoughts: 'بۆچوونەکانت',
       thoughtsHint: 'چیت پێ خۆش بوو؟ چی باشتری دەکات؟',
+      memory: 'یادگارییەکی چای زیاد بکە',
       photo: 'وێنەیەک زیاد بکە',
       photoChange: 'گۆڕینی وێنە',
       photoRemove: 'لابردنی وێنە',
-      send: 'بڵاوی بکەرەوە',
+      consent: 'ڕازیم وێنەکەم لە ڕاکانی چای مامەدا پیشان بدرێت.',
+      send: 'ئەزموونەکەت هاوبەش بکە',
       sending: 'دەنێردرێت…',
       errors: {
         name: 'ناوت بنووسە.',
@@ -628,6 +684,26 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
         readyBody: 'ناردن لە ماڵپەڕەکەوە هێشتا نەکراوەتەوە، بۆیە نەنێردراوە.',
         again: 'یەکێکی تر',
       },
+    },
+    reviews: {
+      title: 'ڕای خەڵک',
+      count: (n) => `${n} هەڵسەنگاندن`,
+      empty: 'هێشتا هیچ ڕایەک نییە',
+      emptyMeta: 'یەکەمیان بە',
+      first: 'یەکەم کەس بە کە ڕای خۆی دەڵێت — ڕاکەت لێرە دەردەکەوێت.',
+      add: 'ڕای خۆت بڵێ',
+      open: 'کردنەوەی ڕاکان',
+      close: 'داخستنی ڕاکان',
+      average: (x) => `بە تێکڕا ${x}/١٠`,
+      hasPhoto: 'وێنەی لەگەڵە',
+      mine: 'هی خۆت',
+      unsent: 'هێشتا نەنێردراوە — تەنها تۆ دەیبینیت',
+      more: (n) => `+${n} ی تر`,
+      prev: 'ڕای پێشوو',
+      next: 'ڕای دواتر',
+      shut: 'داخستن',
+      remove: 'لابردن',
+      tried: 'تاقیکراوە',
     },
     about: {
       title: 'چیرۆکی ئێمە',

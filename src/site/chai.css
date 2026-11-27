@@ -4409,83 +4409,178 @@ html:has(.chai-checkout) {
 }
 
 /* ==========================================================================
-   Share your experience (CM-023): between the teas and Our Story, on the teas' gold. A card of the pack's
-   cream; the rating slides along a track while a glass of tea fills with it.
+   Share your experience (CM-023, CM-024): between the teas and Our Story, on the teas' gold — a cream card
+   after the owner's mock, and under it the reviews in a folder of glass.
    ========================================================================== */
 .chai[data-page='shop'] .chai-share {
   display: none;
 }
 
 .chai-share {
-  --c-accent: #b98000;
+  --c-accent: #c58a12;
   --c-ink: #5b6a23;
   --c-strong: #2b2414;
   --c-glow: #f3b72b;
+  --gold: #d99a17;
   --tea: #a8481a;
   position: relative;
   z-index: 2;
   display: grid;
   justify-items: center;
+  gap: clamp(2rem, 1.4rem + 3vw, 3.5rem);
   padding: clamp(1rem, 0.6rem + 2vw, 2.5rem) var(--pad) clamp(3rem, 2.4rem + 3vw, 5rem);
   background: var(--sun-3);
 }
 
 .chai-share__card {
   display: grid;
-  gap: 1.4rem;
+  gap: 1.35rem;
   inline-size: min(100%, 44rem);
-  padding: clamp(1.25rem, 0.9rem + 2vw, 2.5rem);
+  padding: 0 clamp(1rem, 0.6rem + 2vw, 2.25rem) clamp(1.25rem, 0.9rem + 2vw, 2.25rem);
+  overflow: hidden;
   border-radius: 28px;
-  background: radial-gradient(120% 60% at 50% 0%, rgb(255 255 255 / 0.75), transparent 60%), #fffaf1;
+  background: #fcf6ea;
   box-shadow:
     0 30px 60px -36px rgb(80 40 0 / 0.65),
     0 0 0 1px rgb(120 70 0 / 0.08);
 }
 
-.chai-share__head {
-  display: grid;
-  justify-items: center;
-  gap: 0.45rem;
-  text-align: center;
+/* The banner: the valley, the pack and a glass of tea on the rock; the question over the sky (the picture is
+   never mirrored: its words stay on the right, over the open side). */
+.chai-share__banner {
+  position: relative;
+  margin-inline: calc(-1 * clamp(1rem, 0.6rem + 2vw, 2.25rem));
+  aspect-ratio: 1800 / 801;
+  overflow: hidden;
+  background: #cfd8c4;
 }
 
-.chai-share__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin: 0;
-  padding: 0.35rem 0.8rem 0.35rem 0.6rem;
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--c-glow) 22%, #fff);
-  color: #8a5a00;
-  font: 700 0.72rem / 1 var(--body);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.chai-share__banner-img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/* Softly into the card at its foot, and a cream light behind the words. */
+.chai-share__banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, #fcf6ea, rgb(252 246 234 / 0) 22%),
+    linear-gradient(to left, rgb(252 246 234 / 0.92), rgb(252 246 234 / 0.75) 30%, rgb(252 246 234 / 0) 58%);
+  pointer-events: none;
+}
+
+.chai-share__banner-copy {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  inline-size: 52%;
+  padding: 0.5rem clamp(1rem, 0.6rem + 2vw, 2.25rem) 1.5rem 0.5rem;
+  text-align: start;
 }
 
 .chai-share__title {
-  margin: 0.2rem 0 0;
+  margin: 0;
   color: var(--ink);
-  font: 600 clamp(1.8rem, 1.3rem + 2vw, 2.8rem) / 1.08 var(--serif);
+  font: 600 clamp(1.45rem, 1rem + 2.2vw, 2.6rem) / 1.08 var(--serif);
   letter-spacing: -0.01em;
 }
 
 .chai-share__lede {
   margin: 0;
-  max-inline-size: 30rem;
-  color: var(--ink-2);
-  font: 400 0.95rem / 1.5 var(--body);
+  color: rgb(22 19 15 / 0.78);
+  font: 500 clamp(0.8rem, 0.72rem + 0.4vw, 1rem) / 1.45 var(--body);
+}
+
+/* Steam over the glass on the rock (where the banner's glass stands: 42% across, its rim 47% down). */
+.chai-share__steam {
+  position: absolute;
+  inset-block-start: 22%;
+  left: 39.6%;
+  inline-size: 5%;
+  block-size: 25%;
+  pointer-events: none;
+}
+
+.chai-share__steam i,
+.chai-glass__steam i {
+  position: absolute;
+  inset-block-end: 0;
+  inline-size: 34%;
+  block-size: 100%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.75), transparent);
+  filter: blur(3px);
+  opacity: 0;
+  animation: chai-steam-rise 3.2s ease-in-out infinite;
+}
+
+.chai-share__steam i:nth-child(1),
+.chai-glass__steam i:nth-child(1) {
+  left: 10%;
+}
+
+.chai-share__steam i:nth-child(2),
+.chai-glass__steam i:nth-child(2) {
+  left: 38%;
+  animation-delay: 1.1s;
+}
+
+.chai-share__steam i:nth-child(3),
+.chai-glass__steam i:nth-child(3) {
+  left: 62%;
+  animation-delay: 2.2s;
+}
+
+@keyframes chai-steam-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(30%) scaleX(0.7) rotate(-6deg);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-45%) scaleX(1.25) rotate(8deg);
+  }
 }
 
 .chai-share__form {
   display: grid;
-  gap: 1.15rem;
+  gap: 1.2rem;
 }
 
 .chai-share__row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: 1.15rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.chai-share__q {
+  color: var(--ink);
+  font: 700 0.86rem / 1.2 var(--body);
+}
+
+.chai-share .chai-field__input {
+  background: #fff;
+  border-color: rgb(22 19 15 / 0.13);
+}
+
+.chai-share__big-q {
+  display: block;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  color: var(--ink);
+  font: 800 1.08rem / 1.2 var(--body);
 }
 
 .chai-share__with-icon {
@@ -4507,40 +4602,28 @@ html:has(.chai-checkout) {
 }
 
 .chai-share__set {
-  display: grid;
-  gap: 0.5rem;
   min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.chai-share__set legend {
-  margin-block-end: 0.5rem;
-  padding: 0;
-}
-
-/* Which they tried: four cards, the chosen one lifted on white with the blend's ring. */
+/* Which they tried: the two packs large, "both" and "other" as small choices under them. */
 .chai-tried {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
 }
 
 .chai-tried__one {
   position: relative;
   display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 0.45rem;
-  min-block-size: 7.2rem;
-  padding: 0.75rem 0.4rem 0.7rem;
-  border: 1px solid rgb(22 19 15 / 0.12);
+  align-items: center;
+  border: 1.5px solid rgb(22 19 15 / 0.12);
   border-radius: 18px;
-  background: rgb(255 255 255 / 0.55);
-  color: rgb(22 19 15 / 0.75);
-  font: 600 0.8rem / 1.2 var(--body);
-  text-align: center;
+  background: #fff;
+  color: var(--ink);
+  font: 600 0.95rem / 1.2 var(--body);
   cursor: pointer;
   transition:
     transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1),
@@ -4549,137 +4632,198 @@ html:has(.chai-checkout) {
     border-color 0.3s var(--ease);
 }
 
-.chai-tried__one:hover {
-  background: #fff;
-}
-
 .chai-tried__one:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
-.chai-tried__one[aria-checked='true'] {
-  border-color: transparent;
-  background: #fff;
-  color: var(--ink);
-  box-shadow:
-    0 0 0 2px var(--c-accent),
-    0 14px 26px -16px rgb(80 40 0 / 0.6);
-  transform: translateY(-3px);
+.chai-tried__one--big {
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.9rem 0.6rem 0.85rem;
+  font-size: 1rem;
+}
+
+.chai-tried__pack {
+  inline-size: auto;
+  block-size: clamp(7rem, 5.5rem + 6vw, 9.5rem);
+  aspect-ratio: 410 / 556;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgb(40 20 0 / 0.25));
+  transition: transform 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.chai-tried__one--big[aria-checked='true'] {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #fff8e6, #fdeec8);
+  box-shadow: 0 16px 30px -20px rgb(150 90 0 / 0.7);
+}
+
+.chai-tried__one--big[aria-checked='true'] .chai-tried__pack {
+  transform: translateY(-4px) rotate(-3deg) scale(1.04);
+}
+
+.chai-tried__tick {
+  position: absolute;
+  inset-block-start: 0.6rem;
+  inset-inline-end: 0.6rem;
+  display: grid;
+  place-items: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #fff;
+  transform: scale(0);
+  transition: transform 0.4s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+
+.chai-tried__tick svg {
+  inline-size: 16px;
+  block-size: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chai-tried__tick path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.35s var(--ease-out) 0.15s;
+}
+
+.chai-tried__one[aria-checked='true'] .chai-tried__tick {
+  transform: scale(1);
+}
+
+.chai-tried__one[aria-checked='true'] .chai-tried__tick path {
+  stroke-dashoffset: 0;
 }
 
 .chai-tried__one[data-id='lovely'][aria-checked='true'] {
+  border-color: #c62026;
+  background: linear-gradient(180deg, #fff6f2, #fde3dc);
+}
+
+.chai-tried__one[data-id='lovely'] .chai-tried__tick {
+  background: #c62026;
+}
+
+.chai-tried__one--pill {
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  min-block-size: 48px;
+  padding: 0 0.95rem;
+  text-align: start;
+}
+
+.chai-tried__radio {
+  inline-size: 20px;
+  block-size: 20px;
+  border: 1.5px solid rgb(22 19 15 / 0.3);
+  border-radius: 50%;
+  transition:
+    border-color 0.25s var(--ease),
+    box-shadow 0.3s var(--ease);
+}
+
+.chai-tried__one--pill[aria-checked='true'] {
+  border-color: var(--gold);
+  background: #fff8e6;
+}
+
+.chai-tried__one--pill[aria-checked='true'] .chai-tried__radio {
+  border-color: var(--gold);
   box-shadow:
-    0 0 0 2px #b3272c,
-    0 14px 26px -16px rgb(120 20 20 / 0.55);
-}
-
-.chai-tried__art {
-  inline-size: 34px;
-  block-size: 46px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 5px rgb(40 20 0 / 0.25));
-  transition: transform 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-
-.chai-tried__one[aria-checked='true'] .chai-tried__art {
-  transform: rotate(-6deg) scale(1.1);
-}
-
-.chai-tried__art--both {
-  position: relative;
-  inline-size: 50px;
-}
-
-.chai-tried__art--both img {
-  position: absolute;
-  inset-block-start: 0;
-  inline-size: 32px;
-  block-size: 44px;
-  object-fit: contain;
-}
-
-.chai-tried__art--both img:first-child {
-  inset-inline-start: 0;
-  transform: rotate(-8deg);
-}
-
-.chai-tried__art--both img:last-child {
-  inset-inline-end: 0;
-  transform: rotate(8deg);
-}
-
-.chai-tried__art--glass {
-  color: #3a2a1c;
-  filter: none;
+    inset 0 0 0 4.5px #fff,
+    inset 0 0 0 12px var(--gold);
 }
 
 .chai-tried[aria-invalid='true'] .chai-tried__one {
-  border-color: rgb(194 65 45 / 0.6);
+  border-color: rgb(194 65 45 / 0.55);
 }
 
-/* ---- The rating ---- */
+/* ---- The rating: a real glass of tea, the number and a word, a slim track ---- */
 .chai-rate {
   --v: 0;
   --fill: 0;
   display: grid;
-  gap: 0.8rem;
-  padding: 1rem 1rem 1.1rem;
+  gap: 0.5rem;
+  padding: 1.05rem 1.1rem 0.9rem;
+  border: 1.5px solid rgb(217 154 23 / 0.45);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgb(255 244 222 / 0.9), rgb(255 250 240 / 0.6));
-  box-shadow: inset 0 0 0 1px rgb(120 70 0 / 0.1);
+  background: linear-gradient(180deg, #fff6e2, #fffaf1 70%);
 }
 
 .chai-rate[data-invalid] {
-  box-shadow: inset 0 0 0 1.5px rgb(194 65 45 / 0.7);
+  border-color: rgb(194 65 45 / 0.7);
 }
 
-.chai-rate__top {
-  display: grid;
-  gap: 0.4rem;
+.chai-rate .chai-share__big-q {
+  margin: 0;
 }
 
 .chai-rate__show {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: clamp(1rem, 0.5rem + 3vw, 2.5rem);
 }
 
 .chai-rate__read {
   display: grid;
-  gap: 0.15rem;
+  justify-items: center;
+  gap: 0.25rem;
 }
 
 .chai-rate__score {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.2rem;
+  gap: 0.25rem;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+  direction: ltr;
 }
 
 .chai-rate__n {
   display: inline-block;
-  min-inline-size: 1.2ch;
-  font: 600 3.2rem / 1 var(--serif);
-  color: var(--tea);
+  min-inline-size: 1ch;
+  color: var(--gold);
+  font: 700 clamp(3.4rem, 2.8rem + 3vw, 4.6rem) / 0.95 var(--serif);
+  text-shadow: 0 6px 18px rgb(217 154 23 / 0.25);
   animation: chai-rate-pop 0.45s cubic-bezier(0.3, 1.8, 0.5, 1);
 }
 
 .chai-rate:not([data-set]) .chai-rate__n {
-  color: rgb(22 19 15 / 0.3);
+  color: rgb(22 19 15 / 0.25);
+  text-shadow: none;
   animation: none;
 }
 
 .chai-rate__of {
-  color: rgb(22 19 15 / 0.45);
-  font: 600 1.15rem / 1 var(--serif);
+  color: var(--ink);
+  font: 600 clamp(1.6rem, 1.3rem + 1.4vw, 2.2rem) / 1 var(--serif);
 }
 
 .chai-rate__word {
+  position: relative;
   display: inline-block;
-  color: rgb(22 19 15 / 0.72);
-  font: 600 0.95rem / 1.2 var(--body);
+  padding-block-end: 0.5rem;
+  color: var(--ink);
+  font: 800 1.1rem / 1.2 var(--body);
   animation: chai-rate-word 0.35s var(--ease-out);
+}
+
+/* The gold swash under the word. */
+.chai-rate__word::after {
+  content: '';
+  position: absolute;
+  inset-inline: 8%;
+  inset-block-end: 0;
+  block-size: 5px;
+  border-radius: 50%;
+  border-block-end: 2.5px solid var(--gold);
 }
 
 .chai-rate:not([data-set]) .chai-rate__word {
@@ -4687,8 +4831,8 @@ html:has(.chai-checkout) {
   animation: chai-rate-nudge 1.8s var(--ease) infinite;
 }
 
-.chai-rate[data-top] .chai-rate__word {
-  color: var(--tea);
+.chai-rate:not([data-set]) .chai-rate__word::after {
+  opacity: 0;
 }
 
 @keyframes chai-rate-pop {
@@ -4712,102 +4856,102 @@ html:has(.chai-checkout) {
     transform: none;
   }
   30% {
-    transform: translateX(calc(6px * var(--dir, 1)));
+    transform: translateX(6px);
   }
 }
 
-[dir='rtl'] .chai-rate {
-  --dir: -1;
-}
-
-/* The glass: tea rises in it with the rating; its surface moves; at ten it steams and sparkles. */
+/* The glass: the full picture over the empty one, up to the tea's level. The tea in the picture runs from 38.7%
+   (full) to 83.3% (empty) of its height. */
 .chai-glass {
+  --top: calc(83.3% - var(--fill) * 44.6%);
   position: relative;
   flex: none;
-  inline-size: 64px;
-  block-size: 102px;
+  inline-size: clamp(7.5rem, 6rem + 6vw, 10rem);
+  aspect-ratio: 560 / 600;
 }
 
-.chai-glass svg {
-  display: block;
+.chai-glass__cup {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  isolation: isolate;
+}
+
+.chai-glass__img {
+  position: absolute;
+  inset: 0;
   inline-size: 100%;
   block-size: 100%;
-  overflow: visible;
 }
 
 .chai-glass__tea {
-  transform: translateY(calc(81px - var(--fill) * 66px));
-  transition: transform 0.55s cubic-bezier(0.3, 1.35, 0.5, 1);
+  clip-path: inset(var(--top) 0 0 0);
+  transition: clip-path 0.6s cubic-bezier(0.3, 1.25, 0.5, 1);
 }
 
-.chai-glass__wave {
-  animation: chai-wave 1.8s linear infinite;
+.chai-glass__surface {
+  position: absolute;
+  inset-block-start: var(--top);
+  left: 48.6%;
+  inline-size: calc(44% - var(--fill) * 8%);
+  block-size: 7px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(255 214 150 / 0.95),
+    rgb(255 190 110 / 0.35) 60%,
+    transparent
+  );
+  opacity: 0;
+  translate: -50% -50%;
+  transition:
+    inset-block-start 0.6s cubic-bezier(0.3, 1.25, 0.5, 1),
+    inline-size 0.6s cubic-bezier(0.3, 1.25, 0.5, 1),
+    opacity 0.4s var(--ease);
 }
 
-@keyframes chai-wave {
-  to {
-    transform: translateX(30px);
-  }
+.chai-rate[data-set] .chai-glass__surface {
+  opacity: 0.9;
 }
 
 .chai-glass__steam {
+  position: absolute;
+  inset-block-start: -6%;
+  left: 36%;
+  inline-size: 26%;
+  block-size: 40%;
   opacity: 0;
   transition: opacity 0.6s var(--ease);
+  pointer-events: none;
 }
 
 .chai-rate[data-set] .chai-glass__steam {
-  opacity: calc((var(--fill) - 0.6) * 2.5);
-}
-
-.chai-glass__steam path {
-  animation: chai-steam 2.4s ease-in-out infinite;
-}
-
-.chai-glass__steam path:nth-child(2) {
-  animation-delay: 0.5s;
-}
-
-.chai-glass__steam path:nth-child(3) {
-  animation-delay: 1s;
-}
-
-@keyframes chai-steam {
-  0% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  40% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
+  opacity: clamp(0, (var(--fill) - 0.5) * 2, 1);
 }
 
 .chai-glass__sparks {
   position: absolute;
-  inset: 38% 50% auto;
+  inset: 34% 50% auto;
   pointer-events: none;
 }
 
 .chai-glass__sparks i {
   position: absolute;
-  inline-size: 6px;
-  block-size: 6px;
-  margin: -3px;
+  inline-size: 7px;
+  block-size: 7px;
+  margin: -3.5px;
   border-radius: 50%;
   background: var(--c-glow);
   opacity: 0;
 }
 
 .chai-rate[data-top] .chai-glass__sparks i {
-  animation: chai-spark 0.8s cubic-bezier(0.15, 0.8, 0.35, 1) both;
+  animation: chai-spark 0.85s cubic-bezier(0.15, 0.8, 0.35, 1) both;
 }
 
 .chai-rate[data-top] .chai-glass__sparks i:nth-child(even) {
   background: #fff;
-  box-shadow: 0 0 6px var(--c-glow);
+  box-shadow: 0 0 8px var(--c-glow);
 }
 
 @keyframes chai-spark {
@@ -4817,130 +4961,140 @@ html:has(.chai-checkout) {
   }
   100% {
     opacity: 0;
-    transform: rotate(var(--a)) translateY(-52px) scale(1);
+    transform: rotate(var(--a)) translateY(-72px) scale(1);
   }
 }
 
-.chai-rate[data-top] .chai-glass svg {
+.chai-rate[data-top] .chai-glass__cup {
   animation: chai-glass-cheer 0.6s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
 @keyframes chai-glass-cheer {
   40% {
-    transform: rotate(-8deg) scale(1.08);
+    transform: rotate(-6deg) scale(1.06);
   }
 }
 
-/* The track: the whole of it takes a finger; the gold fills to the thumb, the steps light as it passes. */
+.chai-rate__hint {
+  margin: 0.2rem 0 0;
+  color: rgb(22 19 15 / 0.5);
+  font: 500 0.8rem / 1 var(--body);
+  text-align: center;
+}
+
+.chai-rate__scale {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chai-rate__end b {
+  color: var(--ink);
+  font: 700 1.15rem / 1 var(--serif);
+}
+
+.chai-rate__ends {
+  display: flex;
+  justify-content: space-between;
+  color: rgb(22 19 15 / 0.7);
+  font: 600 0.74rem / 1.2 var(--body);
+  direction: ltr;
+}
+
+/* The track: the whole of it (and a little around it) takes a finger. */
 .chai-rate__track {
-  --thumb: 48px;
   position: relative;
-  block-size: 56px;
-  border-radius: var(--radius-pill);
-  background: rgb(22 19 15 / 0.07);
-  box-shadow: inset 0 2px 4px rgb(40 20 0 / 0.12);
-  cursor: grab;
+  block-size: 46px;
+  cursor: pointer;
   touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
 
-.chai-rate[data-drag] .chai-rate__track {
-  cursor: grabbing;
+.chai-rate__rail {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  block-size: 8px;
+  margin-block-start: -4px;
+  border-radius: 8px;
+  background: rgb(22 19 15 / 0.08);
+  overflow: hidden;
 }
 
 .chai-rate__fill {
   position: absolute;
-  inset-block: 4px;
-  inset-inline-start: 4px;
-  inline-size: calc(var(--v) * (100% - var(--thumb) - 8px) + var(--thumb));
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, #f6d27a, #e59a3a 45%, var(--tea));
-  background-size: calc(100% / max(var(--v), 0.12)) 100%;
+  inset-block: 0;
+  left: 0;
+  inline-size: calc(var(--v) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f0c043, var(--gold));
   opacity: 0;
   transition:
-    inline-size 0.3s cubic-bezier(0.3, 1.35, 0.5, 1),
+    inline-size 0.3s cubic-bezier(0.3, 1.25, 0.5, 1),
     opacity 0.3s var(--ease);
-}
-
-[dir='rtl'] .chai-rate__fill {
-  background-image: linear-gradient(270deg, #f6d27a, #e59a3a 45%, var(--tea));
-  background-position: right;
 }
 
 .chai-rate[data-set] .chai-rate__fill {
   opacity: 1;
 }
 
-.chai-rate__notches {
+.chai-rate__ticks {
   position: absolute;
-  inset-block: 0;
-  inset-inline: calc(4px + var(--thumb) / 2);
+  inset-inline: 0;
+  inset-block-start: calc(50% + 10px);
   display: flex;
-  align-items: center;
   justify-content: space-between;
   pointer-events: none;
 }
 
-.chai-rate__notches i {
-  inline-size: 6px;
-  block-size: 6px;
-  border-radius: 50%;
-  background: rgb(22 19 15 / 0.2);
-  transition:
-    background-color 0.25s var(--ease),
-    transform 0.3s cubic-bezier(0.3, 1.8, 0.5, 1);
+.chai-rate__ticks i {
+  inline-size: 1.5px;
+  block-size: 7px;
+  border-radius: 1px;
+  background: rgb(22 19 15 / 0.22);
+  transition: background-color 0.25s var(--ease);
 }
 
-.chai-rate__notches i[data-on] {
-  background: rgb(255 255 255 / 0.85);
-  transform: scale(1.2);
+.chai-rate__ticks i[data-on] {
+  background: var(--gold);
 }
 
 .chai-rate__thumb {
   position: absolute;
-  inset-block-start: 4px;
-  inset-inline-start: calc(4px + var(--v) * (100% - var(--thumb) - 8px));
-  display: grid;
-  place-items: center;
-  inline-size: var(--thumb);
-  block-size: var(--thumb);
+  inset-block-start: 50%;
+  left: calc(var(--v) * 100%);
+  inline-size: 30px;
+  block-size: 30px;
+  margin: -15px 0 0 -15px;
+  border: 3px solid var(--gold);
   border-radius: 50%;
   background: #fff;
-  color: var(--tea);
-  font: 700 1.1rem / 1 var(--serif);
-  box-shadow:
-    0 6px 16px -6px rgb(60 30 0 / 0.55),
-    0 0 0 1px rgb(120 70 0 / 0.08);
+  box-shadow: 0 4px 12px -4px rgb(120 70 0 / 0.55);
   transition:
-    inset-inline-start 0.3s cubic-bezier(0.3, 1.35, 0.5, 1),
+    left 0.3s cubic-bezier(0.3, 1.25, 0.5, 1),
     transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1),
     box-shadow 0.25s var(--ease);
   pointer-events: none;
 }
 
-.chai-rate__thumb > span {
-  animation: chai-rate-pop 0.35s cubic-bezier(0.3, 1.8, 0.5, 1);
-}
-
 .chai-rate:not([data-set]) .chai-rate__thumb {
-  color: rgb(22 19 15 / 0.55);
+  border-color: rgb(22 19 15 / 0.25);
   animation: chai-rate-nudge 1.8s var(--ease) infinite;
 }
 
 .chai-rate[data-drag] .chai-rate__thumb {
-  transform: scale(1.14);
+  transform: scale(1.2);
   box-shadow:
-    0 10px 22px -8px rgb(60 30 0 / 0.6),
-    0 0 0 6px color-mix(in oklab, var(--c-glow) 35%, transparent);
+    0 6px 16px -6px rgb(120 70 0 / 0.6),
+    0 0 0 8px rgb(243 183 43 / 0.25);
 }
 
 .chai-rate[data-top] .chai-rate__thumb {
-  background: var(--tea);
-  color: #fff7e6;
+  background: var(--gold);
 }
 
-/* The real slider, for the keyboard and screen readers (the track takes the pointer). */
 .chai-rate__input {
   position: absolute;
   inset: 0;
@@ -4951,41 +5105,68 @@ html:has(.chai-checkout) {
   pointer-events: none;
 }
 
-.chai-rate__track:has(.chai-rate__input:focus-visible) {
+.chai-rate__track:has(.chai-rate__input:focus-visible) .chai-rate__thumb {
   outline: 2px solid var(--saffron);
   outline-offset: 3px;
 }
 
-/* ---- The photo ---- */
-.chai-share__photo {
-  display: flex;
+/* ---- A memory of the tea: two prints, the top one the visitor's own photo once added ---- */
+.chai-memory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fbefd6, #fdf6e8);
 }
 
-.chai-share__add {
+.chai-memory__text {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.chai-memory__title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--ink);
+  font: 800 1rem / 1.25 var(--body);
+}
+
+.chai-memory__title svg {
+  flex: none;
+  color: var(--ink);
+}
+
+.chai-memory__title .chai-field__optional {
+  display: block;
+  font-size: 0.76rem;
+}
+
+.chai-memory__add {
   position: relative;
   display: inline-flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  min-block-size: 56px;
-  padding: 0.6rem 1rem;
-  border: 1.5px dashed color-mix(in oklab, var(--c-accent) 55%, transparent);
-  border-radius: 16px;
-  background: rgb(255 255 255 / 0.5);
-  color: rgb(22 19 15 / 0.75);
-  font: 600 0.9rem / 1.2 var(--body);
+  min-block-size: 50px;
+  padding: 0.5rem 1rem;
+  border: 1.5px dashed var(--gold);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.55);
+  color: var(--ink);
+  font: 700 0.92rem / 1.2 var(--body);
   cursor: pointer;
   transition: background-color 0.2s var(--ease);
 }
 
-.chai-share__add:hover {
+.chai-memory__add:hover {
   background: #fff;
 }
 
-.chai-share__add:has(input:focus-visible) {
+.chai-memory__add:has(input:focus-visible) {
   outline: 2px solid var(--saffron);
   outline-offset: 2px;
 }
@@ -4998,26 +5179,70 @@ html:has(.chai-checkout) {
   cursor: pointer;
 }
 
-.chai-share__thumb {
+.chai-memory__prints {
   position: relative;
-  flex: none;
-  inline-size: 72px;
-  block-size: 72px;
-  animation: chai-rate-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+  inline-size: 7.2rem;
+  block-size: 6.4rem;
 }
 
-.chai-share__thumb img {
+.chai-memory__print {
+  position: absolute;
+  inline-size: 5.6rem;
+  block-size: 5.6rem;
+  padding: 5px 5px 14px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 10px 20px -10px rgb(40 20 0 / 0.55);
+}
+
+.chai-memory__print img {
+  display: block;
   inline-size: 100%;
   block-size: 100%;
-  border-radius: 14px;
   object-fit: cover;
-  box-shadow: 0 8px 18px -10px rgb(40 20 0 / 0.6);
+  filter: sepia(0.35) saturate(0.8);
+}
+
+.chai-memory__print--under {
+  inset-block-start: 0.6rem;
+  inset-inline-start: 0;
+  transform: rotate(-9deg);
+}
+
+.chai-memory__print--under img {
+  object-position: 70% 50%;
+  filter: sepia(0.6) saturate(0.6) brightness(1.05);
+}
+
+.chai-memory__print--top {
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  transform: rotate(6deg);
+  animation: chai-print-in 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.chai-memory[data-set] .chai-memory__print--top img {
+  filter: none;
+  animation: chai-develop 1.4s var(--ease-out);
+}
+
+@keyframes chai-print-in {
+  from {
+    transform: translateY(-14px) rotate(-4deg) scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes chai-develop {
+  from {
+    filter: sepia(1) brightness(1.5) blur(4px);
+  }
 }
 
 .chai-share__remove {
   position: absolute;
-  inset-block-start: -8px;
-  inset-inline-end: -8px;
+  inset-block-start: -10px;
+  inset-inline-end: -10px;
   display: grid;
   place-items: center;
   inline-size: 28px;
@@ -5030,9 +5255,74 @@ html:has(.chai-checkout) {
   cursor: pointer;
 }
 
+.chai-consent {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-block-start: -0.4rem;
+  color: rgb(22 19 15 / 0.75);
+  font: 500 0.82rem / 1.4 var(--body);
+  cursor: pointer;
+}
+
+.chai-consent input {
+  position: absolute;
+  opacity: 0;
+  inline-size: 1px;
+  block-size: 1px;
+}
+
+.chai-consent__box {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-block-start: 1px;
+  border: 1.5px solid rgb(22 19 15 / 0.35);
+  border-radius: 6px;
+  background: #fff;
+  transition:
+    background-color 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+}
+
+.chai-consent__box svg {
+  inline-size: 14px;
+  block-size: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chai-consent__box path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s var(--ease-out);
+}
+
+.chai-consent input:checked + .chai-consent__box {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.chai-consent input:checked + .chai-consent__box path {
+  stroke-dashoffset: 0;
+}
+
+.chai-consent input:focus-visible + .chai-consent__box {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+}
+
 .chai-share__go {
-  gap: 0.55rem;
+  gap: 0.6rem;
   inline-size: 100%;
+  min-block-size: 56px;
+  font-size: 1.02rem;
 }
 
 /* ---- Sent ---- */
@@ -5040,7 +5330,7 @@ html:has(.chai-checkout) {
   display: grid;
   justify-items: center;
   gap: 0.6rem;
-  padding-block: 0.5rem 0.25rem;
+  padding-block: 0.25rem;
   text-align: center;
 }
 
@@ -5063,32 +5353,852 @@ html:has(.chai-checkout) {
   animation: chai-win-up 0.5s var(--ease-out) 0.95s both;
 }
 
-@media (max-width: 520px) {
-  .chai-tried {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* A phone: a taller cut of the banner — the glass and most of the pack on the left, the words on the right. */
+@media (max-width: 560px) {
+  .chai-share__banner {
+    aspect-ratio: 1.55;
   }
-  .chai-tried__one {
-    min-block-size: 6.2rem;
+  .chai-share__banner-img {
+    object-position: 48% 50%;
   }
+  .chai-share__steam {
+    left: 36%;
+    inline-size: 7%;
+  }
+  .chai-share__banner-copy {
+    inline-size: 50%;
+    padding-inline: 0.3rem 1rem;
+  }
+  .chai-share__banner::after {
+    background:
+      linear-gradient(to top, #fcf6ea, rgb(252 246 234 / 0) 22%),
+      linear-gradient(to left, rgb(252 246 234 / 0.95), rgb(252 246 234 / 0.8) 40%, rgb(252 246 234 / 0) 62%);
+  }
+}
+
+@media (max-width: 420px) {
+  .chai-memory__prints {
+    inline-size: 5.8rem;
+    block-size: 5.4rem;
+  }
+  .chai-memory__print {
+    inline-size: 4.6rem;
+    block-size: 4.6rem;
+  }
+}
+
+/* ==========================================================================
+   What people say (CM-024): the reviews in a folder of warm glass, after the owner's glass-folder reference.
+   The folder is drawn at 340 × 272 and scaled (ReviewsFolder.tsx).
+   ========================================================================== */
+.chai-share__reviews {
+  display: grid;
+  justify-items: center;
+  inline-size: min(100%, 44rem);
+}
+
+.chai-folder-wrap {
+  display: grid;
+  justify-items: center;
+  inline-size: min(100%, 360px);
+}
+
+.chai-folder {
+  inline-size: min(360px, 100%);
+  --px: 0;
+  --py: 0;
+  --spring: cubic-bezier(0.34, 1.36, 0.5, 1);
+  --hinge: 0deg;
+  --lift: 42px;
+  --spread: 0px;
+  --fan: 0deg;
+  --stack: 15px;
+  position: relative;
+  flex: none;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chai-folder:hover,
+.chai-folder:focus-within {
+  --hinge: -11deg;
+  --lift: -34px;
+  --spread: 8px;
+  --fan: 1.4deg;
+  --stack: 10px;
+}
+
+.chai-folder[data-open] {
+  --hinge: -24deg;
+  --lift: -100px;
+  --spread: 40px;
+  --fan: 5deg;
+  --stack: 30px;
+}
+
+.chai-folder__stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 340px;
+  height: 272px;
+  transform-origin: 0 0;
+}
+
+.chai-folder__tilt {
+  position: absolute;
+  inset: 0;
+  transform: perspective(1400px) rotateX(calc(var(--py) * -3deg)) rotateY(calc(var(--px) * 4deg));
+  transition: transform 0.9s var(--ease-out);
+}
+
+.chai-folder__shadow {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: -6px;
+  height: 60px;
+  border-radius: 40px;
+  background: rgb(90 50 0 / 0.38);
+  filter: blur(22px);
+  transform: translateX(calc(var(--px) * -8px));
+  transition:
+    transform 0.9s var(--ease-out),
+    opacity 0.9s var(--ease-out);
+}
+
+.chai-folder__back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #cdbb93;
+}
+
+.chai-folder__art {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 364px;
+  height: 296px;
+  max-width: none;
+  object-fit: cover;
+  object-position: 78% 40%;
+  transform: translate(calc(var(--px) * -7px), calc(var(--py) * -6px)) scale(1.02);
+  transition: transform 1.1s var(--ease-out);
+}
+
+.chai-folder__sheen {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0) 22%),
+    radial-gradient(120% 80% at 80% 0%, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 60%);
+}
+
+.chai-folder__rim {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  overflow: visible;
+  fill: none;
+  pointer-events: none;
+}
+
+.chai-folder__rim--back {
+  width: 340px;
+  height: 272px;
+}
+
+.chai-folder__rim--back path {
+  stroke: rgb(255 255 255 / 0.45);
+  stroke-width: 1;
+}
+
+/* The sheets: each review, a sheet of the pack's cream paper. */
+.chai-folder__files {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  clip-path: inset(-400px -400px 10px -400px);
+}
+
+.chai-folder__slot {
+  display: contents;
+}
+
+.chai-sheet {
+  position: absolute;
+  left: 34px;
+  top: 96px;
+  display: block;
+  box-sizing: border-box;
+  width: 272px;
+  height: 184px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fffdf8, #f7efdf);
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 0 0 0.5px rgb(80 50 0 / 0.14),
+    0 10px 26px -8px rgb(60 30 0 / 0.3);
+  transform-origin: 50% 100%;
+  transform: translate(
+      calc(var(--jx) + var(--slot) * var(--spread)),
+      calc(var(--lift) + var(--depth) * var(--stack) * -1)
+    )
+    rotate(calc(var(--jr) + var(--slot) * var(--fan)));
+  transition:
+    transform 0.75s var(--spring) calc(var(--depth) * 40ms),
+    box-shadow 0.4s var(--ease-out),
+    translate 0.9s var(--ease-out),
+    opacity 0.9s var(--ease-out);
+}
+
+.chai-folder[data-open] .chai-sheet:hover,
+.chai-folder[data-open] .chai-sheet:focus-visible {
+  transform: translate(
+      calc(var(--jx) + var(--slot) * var(--spread)),
+      calc(var(--lift) + var(--depth) * var(--stack) * -1 - 18px)
+    )
+    rotate(calc(var(--slot) * var(--fan) * 0.6));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 0 0 0.5px rgb(80 50 0 / 0.14),
+    0 22px 40px -12px rgb(60 30 0 / 0.42);
+  transition-delay: 0s;
+}
+
+.chai-sheet:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+.chai-sheet__head {
+  position: absolute;
+  inset: 12px 14px auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.chai-sheet__avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font: 700 15px / 1 var(--serif);
+  box-shadow:
+    0 0 0 2.5px #fff,
+    0 0 0 4.5px transparent;
+  position: relative;
+}
+
+.chai-sheet__avatar::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+.chai-sheet__who {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.chai-sheet__name {
+  overflow: hidden;
+  font: 700 13.5px / 1.2 var(--body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chai-sheet__where {
+  overflow: hidden;
+  color: rgb(22 19 15 / 0.55);
+  font: 500 11px / 1.3 var(--body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chai-sheet__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px 4px 6px;
+  border-radius: 999px;
+  background: #fff3d4;
+  color: #8a5a00;
+  font: 700 13px / 1 var(--serif);
+  direction: ltr;
+}
+
+.chai-sheet__rating small {
+  color: rgb(22 19 15 / 0.45);
+  font-size: 10px;
+}
+
+.chai-mini-glass {
+  inline-size: 11px;
+  block-size: 15px;
+  color: #6b4a2a;
+}
+
+.chai-sheet__note {
+  position: absolute;
+  inset: 60px 14px auto;
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgb(22 19 15 / 0.78);
+  font: 400 12.5px / 1.5 var(--body);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.chai-sheet__tag {
+  position: absolute;
+  inset-block-end: 12px;
+  inset-inline-start: 14px;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(91 106 35 / 0.12);
+  color: #4c5a1c;
+  font: 700 10px / 1.2 var(--body);
+}
+
+.chai-sheet__tag[data-unsent] {
+  background: rgb(22 19 15 / 0.07);
+  color: rgb(22 19 15 / 0.6);
+}
+
+/* A photograph peeking from the sheet's corner: there is a picture in there. */
+.chai-sheet__peek {
+  position: absolute;
+  inset-block-end: -10px;
+  inset-inline-end: 12px;
+  inline-size: 52px;
+  block-size: 58px;
+  padding: 3px 3px 9px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 4px 10px -4px rgb(40 20 0 / 0.5);
+  transform: rotate(8deg);
+  transition: transform 0.4s var(--spring);
+}
+
+.chai-sheet__peek img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.chai-folder[data-open] .chai-sheet:hover .chai-sheet__peek {
+  transform: rotate(2deg) translateY(-6px);
+}
+
+.chai-sheet--first {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 16px;
+}
+
+.chai-sheet__first {
+  color: rgb(22 19 15 / 0.7);
+  font: 600 13px / 1.45 var(--body);
+}
+
+.chai-sheet__lines {
+  display: grid;
+  gap: 9px;
+}
+
+.chai-sheet__lines i {
+  display: block;
+  block-size: 5px;
+  border-radius: 3px;
+  background: rgb(22 19 15 / 0.08);
+}
+
+.chai-sheet--drop {
+  animation: chai-sheet-drop 0.85s var(--ease-out) both;
+}
+
+@keyframes chai-sheet-drop {
+  0% {
+    translate: 0 -190px;
+    rotate: -9deg;
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  72% {
+    translate: 0 10px;
+    rotate: 1deg;
+  }
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+    opacity: 1;
+  }
+}
+
+.chai-folder__more {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 9;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(255 250 240 / 0.9);
+  color: rgb(22 19 15 / 0.7);
+  font: 700 11px / 1.3 var(--body);
+  opacity: 0;
+  translate: -50% -60px;
+  transition: opacity 0.4s var(--ease);
+}
+
+.chai-folder[data-open] .chai-folder__more {
+  opacity: 1;
+}
+
+/* The front: warm frosted glass, hinged on its foot. */
+.chai-folder__front {
+  position: absolute;
+  left: 0;
+  top: 74px;
+  z-index: 10;
+  width: 340px;
+  height: 198px;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  transform-origin: 50% 100%;
+  transform: perspective(760px) rotateX(var(--hinge));
+  transition:
+    transform 0.8s var(--spring),
+    translate 1s var(--ease-out),
+    opacity 1s var(--ease-out);
+}
+
+.chai-folder__front--bump {
+  animation: chai-folder-bump 0.7s var(--ease-out) 0.38s both;
+}
+
+@keyframes chai-folder-bump {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.018 0.975;
+  }
+  70% {
+    scale: 0.996 1.006;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.chai-folder__tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(255 248 232 / 0.2),
+    rgb(255 246 226 / 0.58) 42%,
+    rgb(253 246 232 / 0.95)
+  );
+}
+
+.chai-folder__spec {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    260px 200px at calc(50% + var(--px) * 46%) calc(30% + var(--py) * 40%),
+    rgb(255 255 255 / 0.5),
+    rgb(255 255 255 / 0) 70%
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.chai-folder__rim--front {
+  width: 340px;
+  height: 198px;
+}
+
+.chai-folder__rim--front path {
+  stroke: rgb(255 255 255 / 0.85);
+  stroke-width: 2.4;
+}
+
+.chai-folder__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.chai-folder__hit:focus-visible {
+  outline: 3px solid var(--saffron);
+  outline-offset: -6px;
+  border-radius: 20px;
+}
+
+.chai-folder__label {
+  position: absolute;
+  left: 28px;
+  bottom: 30px;
+  z-index: 2;
+  display: grid;
+  gap: 5px;
+  max-inline-size: 220px;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+[dir='rtl'] .chai-folder__label {
+  left: auto;
+  right: 28px;
+  text-align: right;
+}
+
+.chai-folder__title {
+  margin: 0;
+  font: 600 21px / 1.15 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.chai-folder__meta {
+  color: rgb(22 19 15 / 0.6);
+  font: 600 12px / 1.3 var(--body);
+  animation: chai-folder-roll 0.5s var(--ease-out) both;
+}
+
+@keyframes chai-folder-roll {
+  from {
+    opacity: 0;
+    translate: 0 7px;
+    filter: blur(3px);
+  }
+}
+
+/* "+": on to the share card. */
+.chai-folder__key {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: radial-gradient(120% 90% at 50% 0%, #4a3a24, #2b2414 55%, #16110a);
+  color: #fff7e6;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -3px 8px rgb(0 0 0 / 0.6),
+    0 14px 22px -8px rgb(40 20 0 / 0.6);
+  transition:
+    transform 0.35s var(--spring),
+    opacity 0.6s var(--ease-out) 0.7s,
+    scale 0.7s var(--spring) 0.7s;
+}
+
+[dir='rtl'] .chai-folder__key {
+  right: auto;
+  left: 22px;
+}
+
+.chai-folder__key:hover {
+  transform: translateY(-2px);
+}
+
+.chai-folder__key:active {
+  transform: scale(0.93);
+}
+
+.chai-folder__key:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 3px;
+}
+
+.chai-folder__key svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  animation: chai-folder-turn 0.6s var(--spring);
+}
+
+@keyframes chai-folder-turn {
+  from {
+    rotate: -90deg;
+  }
+}
+
+/* It assembles itself the first time it comes into view. */
+.chai-folder:not([data-entered]) :is(.chai-folder__back, .chai-folder__rim--back) {
+  translate: 0 22px;
+  opacity: 0;
+}
+
+.chai-folder:not([data-entered]) .chai-sheet {
+  translate: 0 -120px;
+  opacity: 0;
+}
+
+.chai-folder:not([data-entered]) .chai-folder__front {
+  translate: 0 46px;
+  opacity: 0;
+}
+
+.chai-folder:not([data-entered]) .chai-folder__key {
+  opacity: 0;
+  scale: 0.6;
+}
+
+.chai-folder:not([data-entered]) .chai-folder__shadow {
+  opacity: 0;
+}
+
+.chai-folder__back,
+.chai-folder__rim--back {
+  transition:
+    translate 1s var(--ease-out),
+    opacity 0.9s var(--ease-out);
+}
+
+.chai-folder[data-entered] .chai-sheet {
+  transition-delay:
+    calc(var(--depth) * 40ms), 0s, calc(0.18s + var(--depth) * 90ms), calc(0.18s + var(--depth) * 90ms);
+}
+
+.chai-folder[data-entered] .chai-folder__front {
+  transition-delay: 0s, 0.42s, 0.42s;
+}
+
+/* ---- One review, open ---- */
+.chai-review {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.chai-review__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(30 18 6 / 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: chai-fade-in 0.3s var(--ease) both;
+}
+
+.chai-review__card {
+  position: relative;
+  display: grid;
+  inline-size: min(100%, 26rem);
+  max-block-size: calc(100svh - 2rem);
+  overflow: auto;
+  border-radius: 24px;
+  background: #fffaf1;
+  color: var(--ink);
+  box-shadow: 0 40px 80px -30px rgb(40 20 0 / 0.7);
+  outline: none;
+  animation: chai-review-in 0.5s cubic-bezier(0.25, 1.35, 0.45, 1) both;
+}
+
+@keyframes chai-review-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) rotate(-3deg) scale(0.92);
+  }
+}
+
+/* Its photograph develops like a print. */
+.chai-review__photo {
+  margin: 0;
+  padding: 10px 10px 0;
+}
+
+.chai-review__photo img {
+  display: block;
+  inline-size: 100%;
+  max-block-size: 22rem;
+  border-radius: 16px;
+  object-fit: cover;
+  animation: chai-develop 1.6s var(--ease-out) 0.15s both;
+}
+
+.chai-review__body {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+.chai-review__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chai-review__name {
+  font: 700 1.05rem / 1.2 var(--body);
+}
+
+.chai-review__rating {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  color: #8a5a00;
+  direction: ltr;
+}
+
+.chai-review__rating b {
+  font: 700 1.9rem / 1 var(--serif);
+}
+
+.chai-review__rating small {
+  color: rgb(22 19 15 / 0.45);
+  font: 600 0.9rem / 1 var(--serif);
+}
+
+.chai-review__rating .chai-mini-glass {
+  inline-size: 14px;
+  block-size: 19px;
+  align-self: center;
+}
+
+.chai-review__band {
+  margin: 0;
+  color: rgb(22 19 15 / 0.7);
+  font: 700 0.86rem / 1.3 var(--body);
+}
+
+.chai-review__band span {
+  font-weight: 500;
+}
+
+.chai-review__note {
+  margin: 0;
+  color: rgb(22 19 15 / 0.85);
+  font: 400 1.02rem / 1.55 var(--serif);
+}
+
+.chai-review__tag {
+  position: static;
+  justify-self: start;
+}
+
+.chai-review__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-block-start: 0.3rem;
+}
+
+.chai-review__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-inline-end: auto;
+  color: rgb(22 19 15 / 0.6);
+  font: 600 0.82rem / 1 var(--body);
+}
+
+.chai-review__nav button {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  padding: 0;
+  border: 1px solid rgb(22 19 15 / 0.12);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.chai-review__nav svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chai-review__remove {
+  min-block-size: 44px;
+  padding: 0 0.9rem;
+  border: 0;
+  background: none;
+  color: #a8321f;
+  font: 600 0.9rem / 1 var(--body);
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .chai-rate__n,
   .chai-rate__word,
   .chai-rate__thumb,
-  .chai-rate__thumb > span,
-  .chai-glass__wave,
-  .chai-glass__steam path,
-  .chai-glass svg,
-  .chai-share__thumb,
+  .chai-glass__cup,
+  .chai-share__steam i,
+  .chai-glass__steam i,
+  .chai-memory__print--top,
+  .chai-memory__print img,
   .chai-share__thanks,
   .chai-share__sub,
-  .chai-share__done > .chai-checkout__ghost {
+  .chai-share__done > .chai-checkout__ghost,
+  .chai-review__card,
+  .chai-review__photo img,
+  .chai-sheet--drop,
+  .chai-folder__front--bump,
+  .chai-folder__meta,
+  .chai-folder__key svg {
     animation: none !important;
   }
   .chai-glass__tea,
+  .chai-glass__surface,
   .chai-rate__thumb,
-  .chai-rate__fill {
+  .chai-rate__fill,
+  .chai-folder *,
+  .chai-folder__tilt {
     transition-duration: 0.01s !important;
+    transition-delay: 0s !important;
+  }
+  .chai-folder__tilt {
+    transform: none;
   }
 }

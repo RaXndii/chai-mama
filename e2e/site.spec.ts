@@ -822,11 +822,12 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(rating).toHaveAttribute('aria-valuetext', '1 / 10 — Not for me');
     await page.keyboard.press('ArrowRight');
     await expect(rating).toHaveAttribute('aria-valuetext', '2 / 10 — Not for me');
+    await share.locator('.chai-rate__track').evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const track = (await share.locator('.chai-rate__track').boundingBox())!;
     await page.mouse.move(track.x + 30, track.y + track.height / 2);
     await page.mouse.down();
-    // The sixth step: its notch (the thumb is 48 px wide).
-    const sixth = track.x + 24 + (5 / 9) * (track.width - 48);
+    // The sixth step: its tick.
+    const sixth = track.x + (5 / 9) * track.width;
     await page.mouse.move(sixth, track.y + track.height / 2, { steps: 8 });
     await page.mouse.up();
     await expect(rating).toHaveValue('6');
@@ -848,9 +849,21 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
         'base64',
       ),
     });
-    await expect(share.locator('.chai-share__thumb img')).toBeVisible();
+    await expect(share.locator('.chai-memory')).toHaveAttribute('data-set', '');
+    await expect(share.locator('.chai-memory__print--top img')).toHaveAttribute('src', /^blob:/);
     await share.getByRole('button', { name: 'Remove photo' }).click();
-    await expect(share.locator('.chai-share__thumb')).toHaveCount(0);
+    await expect(share.locator('.chai-memory')).not.toHaveAttribute('data-set', '');
+    // A photo again, and its consent: it may be shown in the reviews.
+    await share.getByTestId('chai-share-photo').setInputFiles({
+      name: 'cup.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN4+eQaAAVdAqTP7UgSAAAAAElFTkSuQmCC',
+        'base64',
+      ),
+    });
+    await share.getByText('I agree to my photo being shown').click();
+    await expect(share.getByTestId('chai-share-consent')).toBeChecked();
     await share.getByTestId('chai-share-thoughts').fill('Lovely after dinner.');
     await share.getByTestId('chai-share-send').click();
     // Sent (or, without a feedback address yet, said plainly that it was not): Mama winks his thanks.
@@ -858,8 +871,34 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(done).toContainText('Thank you, Rahand!');
     await expect(done).toContainText('hasn’t been sent');
     await expect(done.getByTestId('chai-win')).toBeVisible();
-    await done.getByRole('button', { name: 'Share another' }).click();
-    await expect(share.getByTestId('chai-share-name')).toHaveValue('');
+    // It drops into the folder of reviews below, as the visitor's own and as not sent (CM-024).
+    const folder = share.getByTestId('chai-reviews');
+    await expect(
+      folder.getByRole('button', { name: /Open the reviews — 1 review · 10\/10 on average/ }),
+    ).toBeAttached({
+      timeout: 6000,
+    });
+    await folder.getByTestId('chai-reviews-open').click();
+    await expect(folder.getByTestId('chai-reviews-open')).toHaveAttribute('aria-expanded', 'true');
+    const sheet = folder.getByTestId('chai-review');
+    await expect(sheet).toHaveCount(1);
+    await expect(sheet).toContainText('Rahand Mhamad');
+    await expect(sheet).toContainText('Not sent yet');
+    await sheet.click();
+    const open = page.getByTestId('chai-review-open');
+    await expect(open.getByRole('dialog', { name: 'Rahand Mhamad' })).toBeVisible();
+    await expect(open).toContainText('Lovely after dinner.');
+    await expect(open).toContainText('Tried: The Lovely Blend');
+    await expect(open.locator('.chai-review__photo img')).toHaveAttribute('src', /^data:image\/jpeg/);
+    await expect(sheet.locator('.chai-sheet__peek')).toBeAttached();
+    // Kept on this device: still there after a reload; removed when asked.
+    await page.reload();
+    await page.getByTestId('chai-share').scrollIntoViewIfNeeded();
+    await page.getByTestId('chai-reviews-open').click();
+    await page.getByTestId('chai-review').click();
+    await page.getByTestId('chai-review-open').getByRole('button', { name: 'Remove' }).click();
+    await expect(page.getByTestId('chai-review')).toHaveCount(0);
+    await expect(page.getByTestId('chai-reviews')).toContainText('No reviews yet');
     expect(errors).toEqual([]);
   });
 

@@ -8,6 +8,8 @@ import { emailOk } from './checkout';
 export type Tried = 'heritage' | 'lovely' | 'both' | 'other';
 
 export interface Feedback {
+  /** The review's own id (it comes back with it once published). */
+  id?: string;
   name: string;
   email?: string;
   location?: string;
@@ -15,6 +17,8 @@ export interface Feedback {
   /** 1 … 10. */
   rating: number;
   thoughts?: string;
+  /** May the photo be shown in the reviews (CM-024)? */
+  photoConsent?: boolean;
   lang: Locale;
 }
 
