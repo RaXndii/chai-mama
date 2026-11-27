@@ -5,7 +5,7 @@ import { chaimama as copy } from '@/content';
 import { toKurdishDigits } from '@/content/kurdish';
 import { LOCALES, type Locale } from '@/content/types';
 import bannerSmall from '../brand/share-banner-1x.webp';
-import type { Review } from './reviews';
+import { TONE, type Review } from './reviews';
 
 /**
  * What people say (DECISIONS CM-024): the reviews in a folder of warm glass, after the owner's glass-folder
@@ -25,7 +25,8 @@ interface Props {
   drop?: string | null;
   /** "+": on to the share card. */
   onAdd: () => void;
-  onRemove: (review: Review) => void;
+  /** On to the reviews page (CM-025), to one review when one was chosen. */
+  onAll: (focus?: string) => void;
 }
 
 /** The folder is drawn at 340 × 272 (and room above for the sheets to rise into), and scaled to fit. */
@@ -40,7 +41,7 @@ const MAX_VISIBLE = 4;
 
 const digitsOf = (lang: Locale) => (n: number | string) => (lang === 'ckb' ? toKurdishDigits(n) : String(n));
 
-export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: Props) {
+export default function ReviewsFolder({ lang, reviews, drop, onAdd, onAll }: Props) {
   const r = copy.reviews;
   const digits = digitsOf(lang);
   const wrap = useRef<HTMLDivElement>(null);
@@ -52,7 +53,20 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
   const [entered, setEntered] = useState(
     () => typeof IntersectionObserver === 'undefined' || qualityStore.getState().reducedMotion,
   );
-  const [detail, setDetail] = useState<number | null>(null);
+  const going = useRef(0);
+  useEffect(() => () => window.clearTimeout(going.current), []);
+  /** Open: the glass falls forward and the reviews rise out — then on to their page. */
+  const openAll = (focus?: string) => {
+    setOpen(true);
+    window.clearTimeout(going.current);
+    going.current = window.setTimeout(
+      () => {
+        onAll(focus);
+        setOpen(false);
+      },
+      qualityStore.getState().reducedMotion ? 0 : 520,
+    );
+  };
   const [bump, setBump] = useState(0);
   // A review just shared drops in: the pocket gives a little under it, and the count rolls over.
   const [seen, setSeen] = useState(drop);
@@ -137,7 +151,7 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
 
   // Escape, or a press outside, closes it (the open review first).
   useEffect(() => {
-    if (!open || detail !== null) return;
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       setOpen(false);
@@ -152,7 +166,7 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onDown);
     };
-  }, [open, detail]);
+  }, [open]);
 
   const count = reviews.length;
   const start = Math.max(0, count - MAX_VISIBLE);
@@ -219,9 +233,8 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
                 ref={hit}
                 type="button"
                 className="chai-folder__hit"
-                aria-expanded={open}
-                aria-label={`${open ? r.close : r.open} — ${meta}`}
-                onClick={() => setOpen((o) => !o)}
+                aria-label={`${r.page.seeAll} — ${meta}`}
+                onClick={() => openAll()}
                 data-testid="chai-reviews-open"
               />
               <div className="chai-folder__label">
@@ -244,7 +257,7 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
                       z={v + 1}
                       dropping={rev.id === dropped}
                       onDropped={() => setDropped(null)}
-                      onOpen={() => setDetail(start + v)}
+                      onOpen={() => openAll(rev.id)}
                     />
                   </div>
                 ))
@@ -286,31 +299,9 @@ export default function ReviewsFolder({ lang, reviews, drop, onAdd, onRemove }: 
           </div>
         </div>
       </div>
-
-      {detail !== null && reviews[detail] && (
-        <Detail
-          lang={lang}
-          reviews={reviews}
-          at={detail}
-          onGo={setDetail}
-          onClose={() => setDetail(null)}
-          onRemove={(rev) => {
-            setDetail(null);
-            onRemove(rev);
-          }}
-        />
-      )}
     </div>
   );
 }
-
-/** A colour for each tea (the avatar's ring): the packs' gold and red, both, or tea-brown. */
-const TONE: Record<Review['tried'], string> = {
-  heritage: '#e3a21a',
-  lovely: '#c62026',
-  both: 'linear-gradient(135deg, #e3a21a 50%, #c62026 50%)',
-  other: '#8a4a1c',
-};
 
 function Sheet({
   lang,
@@ -388,7 +379,7 @@ function Sheet({
 }
 
 /** A tea glass filled to the rating, for the small spaces. */
-function MiniGlass({ fill }: { fill: number }) {
+export function MiniGlass({ fill }: { fill: number }) {
   const top = 19 - fill * 14;
   return (
     <svg className="chai-mini-glass" viewBox="0 0 16 22" aria-hidden="true">
@@ -409,7 +400,7 @@ function MiniGlass({ fill }: { fill: number }) {
 }
 
 /** One review, open: its photograph developing, who and from where, the rating and the words; on to the next. */
-function Detail({
+export function Detail({
   lang,
   reviews,
   at,

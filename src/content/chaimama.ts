@@ -201,6 +201,20 @@ export interface ChaiMamaContent {
     shut: string;
     remove: string;
     tried: string;
+    /** The reviews page (CM-025). */
+    page: {
+      lede: string;
+      all: string;
+      seeAll: string;
+      back: string;
+      from: (n: string) => string;
+      filter: string;
+      sort: string;
+      newest: string;
+      highest: string;
+      noneHere: string;
+      photo: string;
+    };
   };
   /**
    * About (CM-011): the owner's own words about the brand and how its tea is made (2026-10-22). It takes the
@@ -451,6 +465,19 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       shut: 'Close',
       remove: 'Remove',
       tried: 'Tried',
+      page: {
+        lede: 'Every cup has a story: here are the ones people shared about Chai Mama.',
+        all: 'All',
+        seeAll: 'See all reviews',
+        back: 'Back',
+        from: (n) => `from ${n}`,
+        filter: 'Show reviews of',
+        sort: 'Order',
+        newest: 'Newest',
+        highest: 'Highest rated',
+        noneHere: 'No reviews of this one yet.',
+        photo: 'See the photo',
+      },
     },
     about: {
       title: 'Our Story',
@@ -704,6 +731,19 @@ export const chaimamaContent: Localized<ChaiMamaContent> = {
       shut: 'داخستن',
       remove: 'لابردن',
       tried: 'تاقیکراوە',
+      page: {
+        lede: 'هەر پیاڵەیەک چیرۆکێکی هەیە: ئەمانە ئەوانەن کە خەڵک دەربارەی چای مامە هاوبەشیان کردووە.',
+        all: 'هەمووی',
+        seeAll: 'هەموو ڕاکان ببینە',
+        back: 'گەڕانەوە',
+        from: (n) => `لە ${n} ڕا`,
+        filter: 'ڕاکانی',
+        sort: 'ڕیزکردن',
+        newest: 'نوێترین',
+        highest: 'بەرزترین هەڵسەنگاندن',
+        noneHere: 'هێشتا هیچ ڕایەک بۆ ئەمە نییە.',
+        photo: 'وێنەکە ببینە',
+      },
     },
     about: {
       title: 'چیرۆکی ئێمە',

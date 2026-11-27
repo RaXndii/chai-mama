@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { createStore, useStore } from 'zustand';
 import type { Tried } from './feedback';
 
 /**
@@ -125,3 +127,43 @@ export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+/**
+ * The reviews as the pages see them (the share page's folder and the reviews page): the shop's, fetched once,
+ * and the visitor's own.
+ */
+export const reviewsStore = createStore<{
+  feed: Review[];
+  mine: Review[];
+  started: boolean;
+  focus: string | null;
+}>(() => ({ feed: [], mine: [], started: false, focus: null }));
+
+/** Read the visitor's own, and fetch the shop's (once). */
+export function startReviews(): void {
+  if (reviewsStore.getState().started) return;
+  reviewsStore.setState({ started: true, mine: myReviews() });
+  void loadReviews().then((feed) => reviewsStore.setState({ feed }));
+}
+
+/** One of the visitor's own, just shared (or forgotten, with `remove`). */
+export function addMine(review: Review, remove = false): void {
+  keepMine(review, remove);
+  const rest = reviewsStore.getState().mine.filter((r) => r.id !== review.id);
+  reviewsStore.setState({ mine: remove ? rest : [...rest, { ...review, mine: true }] });
+}
+
+/** Every review to show, each once, oldest first. */
+export function useReviews(): Review[] {
+  const feed = useStore(reviewsStore, (s) => s.feed);
+  const mine = useStore(reviewsStore, (s) => s.mine);
+  return useMemo(() => mergeReviews(feed, mine), [feed, mine]);
+}
+
+/** A colour for each tea (the avatar's ring): the packs' gold and red, both, or tea-brown. */
+export const TONE: Record<Review['tried'], string> = {
+  heritage: '#e3a21a',
+  lovely: '#c62026',
+  both: 'linear-gradient(135deg, #e3a21a 50%, #c62026 50%)',
+  other: '#8a4a1c',
+};

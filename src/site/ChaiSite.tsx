@@ -16,7 +16,7 @@ import { navigate, settle, usePage } from '@/app/router';
 import { chaimama as copy, useLocale } from '@/content';
 import { BLENDS, type BlendId } from '@/content/chaimama';
 import { LOCALES } from '@/content/types';
-import { pathOf, type ChaiPage } from '../routes';
+import { inScroll, pathOf, type ChaiPage } from '../routes';
 import {
   LAYERS,
   layerPlacement,
@@ -37,6 +37,8 @@ import ChaiNav from './ChaiNav';
 import { Arrow } from './icons';
 import { NAV_PAGE, type NavSection } from './nav';
 import Shop, { PackGhosts } from './Shop';
+import { reviewsStore } from './reviews';
+import ReviewsPage from './ReviewsPage';
 import Share from './Share';
 import Teas from './Teas';
 import { CALM_TIME_MS, sceneAt, smoothstep, TIME_MS, timeline } from './timeOfDay';
@@ -394,8 +396,9 @@ export default function ChaiSite() {
   const header = useRef({ scrolled: false });
   const heroH = useRef(0);
   const headerH = useRef(64);
-  /** Our Story's start, under the homepage. */
+  /** Our Story's start, under the homepage, and "How was your tea?" before it. */
   const endEl = useRef<HTMLElement | null>(null);
+  const shareEl = useRef<HTMLElement | null>(null);
   /** The next change of page comes from the scroll itself (the homepage into Our Story): nothing to do for it. */
   const quiet = useRef(false);
   const current: NavSection = page === 'shop' ? 'chai-tea' : page === 'about' ? 'chai-about' : 'chai-top';
@@ -412,16 +415,24 @@ export default function ChaiSite() {
     if (isScrolled !== header.current.scrolled) setScrolled((header.current.scrolled = isScrolled));
     // Once the picture is off the screen its drifts stop.
     const el = journeyEl.current;
-    const away = pg !== 'shop' && top > heroH.current;
+    const away = pg === 'reviews' || (pg !== 'shop' && top > heroH.current);
     if (el && (el.dataset.away === '') !== away) {
       if (away) el.dataset.away = '';
       else delete el.dataset.away;
     }
-    // The homepage runs on into Our Story (CM-021): once its ink reaches the header, the page is Our Story (its
-    // address, the header's colours, the link lit), and back again above it. Only an address changes.
+    // The homepage runs on into "How was your tea?" and Our Story (CM-021, CM-025): once each reaches the header,
+    // the page is that one (its address; on Our Story's ink, the header's light colours and its link lit), and
+    // back again above it. Only an address changes.
     const end = endEl.current;
-    if (pg !== 'shop' && end) {
-      const want: ChaiPage = end.getBoundingClientRect().top <= headerH.current ? 'about' : 'home';
+    const share = shareEl.current;
+    if (inScroll(pg) && end && share) {
+      const line = headerH.current;
+      const want: ChaiPage =
+        end.getBoundingClientRect().top <= line
+          ? 'about'
+          : share.getBoundingClientRect().top <= line
+            ? 'share'
+            : 'home';
       if (want !== pg) {
         quiet.current = true;
         settle(want);
@@ -441,6 +452,7 @@ export default function ChaiSite() {
       heroH.current = heroEl.current?.offsetHeight ?? window.innerHeight;
       const root = rootEl.current;
       endEl.current = root?.querySelector<HTMLElement>('#chai-end') ?? null;
+      shareEl.current = root?.querySelector<HTMLElement>('#chai-share') ?? null;
       headerH.current = root?.querySelector<HTMLElement>('.chai-header')?.offsetHeight ?? 64;
       onScroll();
     };
@@ -609,8 +621,9 @@ export default function ChaiSite() {
     }
     const root = rootEl.current;
     const moved = prev !== null && prev !== page;
-    // Our Story by its address (a link, Back, the shop's menu): the homepage, already scrolled down to it.
-    const arrived = prev === null && page === 'about';
+    // Our Story or "How was your tea?" by its address (a link, Back, the shop's menu): the homepage, already
+    // scrolled down to it.
+    const arrived = prev === null && (page === 'about' || page === 'share');
     if (moved) window.scrollTo({ top: 0, behavior: 'instant' });
     const glide =
       moved &&
@@ -624,6 +637,8 @@ export default function ChaiSite() {
     if (part) part.scrollIntoView({ block: 'start' });
     else if (page === 'about')
       root.querySelector<HTMLElement>('#chai-end')?.scrollIntoView({ block: 'start' });
+    else if (page === 'share')
+      root.querySelector<HTMLElement>('#chai-share')?.scrollIntoView({ block: 'start' });
     if (arrived) return;
     const target =
       part ??
@@ -631,7 +646,11 @@ export default function ChaiSite() {
         ? shopEl.current
         : page === 'about'
           ? root.querySelector('#chai-about')
-          : heroEl.current);
+          : page === 'share'
+            ? root.querySelector('#chai-share')
+            : page === 'reviews'
+              ? root.querySelector('#chai-reviews')
+              : heroEl.current);
     target?.focus({ preventScroll: true });
     // The page's own state is in refs; this runs per page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -746,16 +765,20 @@ export default function ChaiSite() {
       else toTop();
       return;
     }
-    // The homepage and Our Story are one scroll (CM-021): a glide down to it, or back up to the top.
-    if (pageRef.current !== 'shop' && to !== 'shop') {
+    // The homepage, "How was your tea?" and Our Story are one scroll (CM-021, CM-025): a glide to it.
+    if (inScroll(pageRef.current) && inScroll(to)) {
       if (to === 'about') toPart(part ?? 'chai-about');
+      else if (to === 'share') toPart(part ?? 'chai-share');
       else toTop();
       return;
     }
     pendingPart.current = part ?? null;
     const go = () => navigate(to);
     const atHero = window.scrollY < window.innerHeight * 0.3;
-    const glides = atHero && (to === 'shop' || to === 'home') && pageRef.current !== 'about';
+    const glides =
+      atHero &&
+      (to === 'shop' || to === 'home') &&
+      (pageRef.current === 'home' || pageRef.current === 'shop');
     const fade =
       !glides && typeof document.startViewTransition === 'function' && !qualityStore.getState().reducedMotion;
     if (!fade) return go();
@@ -1015,13 +1038,24 @@ export default function ChaiSite() {
         </div>
 
         {/* The teas: each blend, what is in it, and Buy now (CM-017). */}
-        <Teas lang={lang} onBuy={buy} onStory={() => goPage('about')} />
+        <Teas lang={lang} onBuy={buy} />
 
         {/* Share your experience, between the teas and Our Story (CM-023). */}
-        <Share lang={lang} />
+        <Share
+          lang={lang}
+          onAll={(focus) => {
+            if (focus) reviewsStore.setState({ focus });
+            goPage('reviews');
+          }}
+        />
       </main>
 
       {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}
+      {/* What people say, all of it: a page of its own (CM-025). */}
+      {page === 'reviews' && (
+        <ReviewsPage lang={lang} onShare={() => goPage('share')} onBack={() => goPage('share')} />
+      )}
+
       <About lang={lang} onTop={toTop} />
     </div>
   );

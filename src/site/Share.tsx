@@ -1,7 +1,6 @@
 import {
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -22,10 +21,12 @@ import Celebrate from './Celebrate';
 import { primeChime, playTick } from './chime';
 import { checkFeedback, sendFeedback, shrinkPhoto, type FeedbackError, type Tried } from './feedback';
 import ReviewsFolder from './ReviewsFolder';
-import { keepMine, loadReviews, mergeReviews, myReviews, newId, smallPhoto, type Review } from './reviews';
+import { addMine, newId, smallPhoto, startReviews, useReviews, type Review } from './reviews';
 
 interface Props {
   lang: Locale;
+  /** On to the reviews page (CM-025), to one review when one was chosen. */
+  onAll: (focus?: string) => void;
 }
 
 /**
@@ -36,7 +37,7 @@ interface Props {
  * tea (a photo, optional) and whether it may be shown. Sent, Mama winks his thanks, and the review drops into the
  * folder of reviews below.
  */
-export default function Share({ lang }: Props) {
+export default function Share({ lang, onAll }: Props) {
   const s = copy.share;
   const uid = useId().replace(/:/g, '');
   const root = useRef<HTMLElement>(null);
@@ -54,20 +55,9 @@ export default function Share({ lang }: Props) {
   const [phase, setPhase] = useState<'idle' | 'busy' | 'done'>('idle');
   const [result, setResult] = useState<'sent' | 'unsent'>('unsent');
   // The reviews (CM-024): the shop's published ones, and the ones shared from this device.
-  const [feed, setFeed] = useState<Review[]>([]);
-  const [mine, setMine] = useState<Review[]>(() => myReviews());
+  const reviews = useReviews();
   const [drop, setDrop] = useState<string | null>(null);
-  const reviews = useMemo(() => mergeReviews(feed, mine), [feed, mine]);
-
-  useEffect(() => {
-    let live = true;
-    void loadReviews().then((rows) => {
-      if (live) setFeed(rows);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
+  useEffect(startReviews, []);
 
   // Each part rises in once as it first comes into view.
   useEffect(() => {
@@ -151,8 +141,7 @@ export default function Share({ lang }: Props) {
         mine: true,
         sent: sent === 'sent',
       };
-      keepMine(review);
-      setMine((m) => [...m.filter((x) => x.id !== id), review]);
+      addMine(review);
       setResult(sent);
       setPhase('done');
       const how = smooth();
@@ -218,329 +207,324 @@ export default function Share({ lang }: Props) {
       className="chai-share"
       aria-labelledby="chai-share-title"
       data-testid="chai-share"
+      tabIndex={-1}
     >
-      <div ref={card} className="chai-share__card" data-rise="">
-        {/* The valley, the pack on its rock and a glass of tea poured from it; the question over the sky. */}
-        <header className="chai-share__banner">
-          <img
-            className="chai-share__banner-img"
-            src={bannerSmall}
-            srcSet={`${bannerSmall} 900w, ${bannerLarge} 1800w`}
-            sizes="(max-width: 760px) 100vw, 44rem"
-            alt=""
-            width={1800}
-            height={801}
-            loading="lazy"
-            decoding="async"
-          />
-          <span className="chai-share__steam" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          <div className="chai-share__banner-copy">
-            <h2 id="chai-share-title" className="chai-share__title">
-              {s.title}
-            </h2>
-            {phase !== 'done' && <p className="chai-share__lede">{s.lede}</p>}
-          </div>
-        </header>
-
-        {phase === 'done' ? (
-          <div className="chai-share__done" role="status" data-testid="chai-share-done">
-            <Celebrate from={null} sound />
-            <h3 className="chai-share__thanks">
-              {result === 'sent' ? s.done.sent(first) : s.done.ready(first)}
-            </h3>
-            <p className="chai-share__sub">{result === 'sent' ? s.done.sentBody : s.done.readyBody}</p>
-            <button type="button" className="chai-checkout__ghost" onClick={again}>
-              {s.done.again}
-            </button>
-          </div>
-        ) : (
-          <form className="chai-share__form" onSubmit={submit} noValidate>
-            <div className="chai-share__row">
-              <label className="chai-field">
-                <span className="chai-field__label chai-share__q">{s.name}</span>
-                <input
-                  className="chai-field__input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={s.namePh}
-                  autoComplete="name"
-                  enterKeyHint="next"
-                  aria-invalid={error?.field === 'name' || undefined}
-                  aria-describedby={errFor('name')}
-                  data-field="name"
-                  data-testid="chai-share-name"
-                />
-              </label>
-              <label className="chai-field">
-                <span className="chai-field__label chai-share__q">
-                  {s.email} <span className="chai-field__optional">({s.optional})</span>
-                </span>
-                <input
-                  className="chai-field__input"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  dir="ltr"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={s.emailPh}
-                  enterKeyHint="next"
-                  aria-invalid={error?.field === 'email' || undefined}
-                  aria-describedby={errFor('email')}
-                  data-field="email"
-                  data-testid="chai-share-email"
-                />
-              </label>
-            </div>
-            <label className="chai-field">
-              <span className="chai-field__label chai-share__q">
-                {s.location} <span className="chai-field__optional">({s.optional})</span>
-              </span>
-              <span className="chai-share__with-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M12 21s7-7.2 7-12.5A7 7 0 0 0 5 8.5C5 13.8 12 21 12 21Z"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                  />
-                  <circle cx="12" cy="8.5" r="2.4" fill="currentColor" />
-                </svg>
-                <input
-                  className="chai-field__input"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder={s.locationHint}
-                  autoComplete="address-level2"
-                  enterKeyHint="next"
-                  data-testid="chai-share-location"
-                />
-              </span>
-            </label>
-
-            <fieldset className="chai-share__set">
-              <legend className="chai-share__big-q">{s.tried}</legend>
-              <div
-                className="chai-tried"
-                role="radiogroup"
-                aria-label={s.tried}
-                aria-invalid={error?.field === 'tried' || undefined}
-                aria-describedby={errFor('tried')}
-              >
-                {choices.map((ch, i) => (
-                  <button
-                    key={ch.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={tried === ch.id}
-                    tabIndex={tabFor(ch.id, i)}
-                    className={`chai-tried__one${ch.big ? ' chai-tried__one--big' : ' chai-tried__one--pill'}`}
-                    data-id={ch.id}
-                    {...(i === 0 ? { 'data-field': 'tried' } : {})}
-                    onClick={() => setTried(ch.id)}
-                    onKeyDown={triedKey(i)}
-                    data-testid={`chai-share-tried-${ch.id}`}
-                  >
-                    {ch.big ? (
-                      <>
-                        <img
-                          className="chai-tried__pack"
-                          src={POUCHES[ch.id as 'heritage' | 'lovely'].small}
-                          alt=""
-                          width={410}
-                          height={556}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <span className="chai-tried__tick" aria-hidden="true">
-                          <svg viewBox="0 0 24 24">
-                            <path d="M6 12.5l4 4L18 8" pathLength={1} />
-                          </svg>
-                        </span>
-                      </>
-                    ) : (
-                      <span className="chai-tried__radio" aria-hidden="true" />
-                    )}
-                    <span className="chai-tried__name">{ch.label}</span>
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <RateSlider
-              lang={lang}
-              value={rating}
-              onChange={(v) => {
-                setRating(v);
-                if (error?.field === 'rating') setError(null);
-              }}
-              invalid={error?.field === 'rating'}
-              describedBy={errFor('rating')}
+      {/* A page of its own in the homepage's scroll (CM-025): on a wide screen the picture and the reviews on
+          one side, the questions on the other; on a phone, one after another, from edge to edge. */}
+      <div className="chai-share__page">
+        <aside className="chai-share__side">
+          {/* The valley, the pack on its rock and a glass of tea poured from it; the question over the sky. */}
+          <header className="chai-share__banner">
+            <img
+              className="chai-share__banner-img"
+              src={bannerSmall}
+              srcSet={`${bannerSmall} 900w, ${bannerLarge} 1800w`}
+              sizes="(max-width: 999px) 100vw, 40vw"
+              alt=""
+              width={1800}
+              height={801}
+              decoding="async"
             />
-
-            <label className="chai-field">
-              <span className="chai-field__label chai-share__q">
-                {s.thoughts} <span className="chai-field__optional">({s.optional})</span>
-              </span>
-              <textarea
-                className="chai-field__input chai-field__input--area"
-                value={thoughts}
-                rows={3}
-                maxLength={600}
-                onChange={(e) => setThoughts(e.target.value)}
-                placeholder={s.thoughtsHint}
-                data-testid="chai-share-thoughts"
-              />
-            </label>
-
-            {/* A memory of the tea: two prints, the top one the visitor's own photo once added. */}
-            <div className="chai-memory" data-set={photo ? '' : undefined}>
-              <div className="chai-memory__text">
-                <p className="chai-memory__title">
-                  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.3l1.4-2h5.6l1.4 2H18a1.5 1.5 0 0 1 1.5 1.5V11M3.5 8.5v9A1.5 1.5 0 0 0 5 19h8"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle cx="11" cy="12.5" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                    <path
-                      d="M19 15v6M16 18h6"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span>
-                    {s.memory} <span className="chai-field__optional">({s.optional})</span>
-                  </span>
-                </p>
-                <label className="chai-memory__add">
-                  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect
-                      x="3.5"
-                      y="5"
-                      width="15"
-                      height="13"
-                      rx="2"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
-                    <path
-                      d="m5.5 16 3.5-4 3 3 2-2 3.5 3"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M19 3v5M16.5 5.5h5"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span>{photo ? s.photoChange : s.photo}</span>
+            <span className="chai-share__steam" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <div className="chai-share__banner-copy">
+              <h2 id="chai-share-title" className="chai-share__title">
+                {s.title}
+              </h2>
+              <p className="chai-share__lede">{s.lede}</p>
+            </div>
+          </header>
+          {/* What people say: the reviews, in a folder of glass (CM-024). */}
+          <div ref={folder} className="chai-share__reviews" data-rise="">
+            <ReviewsFolder lang={lang} reviews={reviews} drop={drop} onAdd={toCard} onAll={onAll} />
+          </div>
+        </aside>
+        <div ref={card} className="chai-share__card" data-rise="">
+          {phase === 'done' ? (
+            <div className="chai-share__done" role="status" data-testid="chai-share-done">
+              <Celebrate from={null} sound />
+              <h3 className="chai-share__thanks">
+                {result === 'sent' ? s.done.sent(first) : s.done.ready(first)}
+              </h3>
+              <p className="chai-share__sub">{result === 'sent' ? s.done.sentBody : s.done.readyBody}</p>
+              <button type="button" className="chai-checkout__ghost" onClick={again}>
+                {s.done.again}
+              </button>
+            </div>
+          ) : (
+            <form className="chai-share__form" onSubmit={submit} noValidate>
+              <div className="chai-share__row">
+                <label className="chai-field">
+                  <span className="chai-field__label chai-share__q">{s.name}</span>
                   <input
-                    type="file"
-                    accept="image/*"
-                    className="chai-share__file"
-                    onChange={(e) => {
-                      void pickPhoto(e.target.files?.[0]);
-                      e.target.value = '';
-                    }}
-                    aria-describedby={errFor('photo')}
-                    data-testid="chai-share-photo"
+                    className="chai-field__input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={s.namePh}
+                    autoComplete="name"
+                    enterKeyHint="next"
+                    aria-invalid={error?.field === 'name' || undefined}
+                    aria-describedby={errFor('name')}
+                    data-field="name"
+                    data-testid="chai-share-name"
+                  />
+                </label>
+                <label className="chai-field">
+                  <span className="chai-field__label chai-share__q">
+                    {s.email} <span className="chai-field__optional">({s.optional})</span>
+                  </span>
+                  <input
+                    className="chai-field__input"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    dir="ltr"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={s.emailPh}
+                    enterKeyHint="next"
+                    aria-invalid={error?.field === 'email' || undefined}
+                    aria-describedby={errFor('email')}
+                    data-field="email"
+                    data-testid="chai-share-email"
                   />
                 </label>
               </div>
-              <div className="chai-memory__prints">
-                <span className="chai-memory__print chai-memory__print--under" aria-hidden="true">
-                  <img src={bannerSmall} alt="" loading="lazy" decoding="async" />
+              <label className="chai-field">
+                <span className="chai-field__label chai-share__q">
+                  {s.location} <span className="chai-field__optional">({s.optional})</span>
                 </span>
-                <span key={photo?.url ?? 'none'} className="chai-memory__print chai-memory__print--top">
-                  <img src={photo?.url ?? bannerSmall} alt="" />
-                  {photo && (
+                <span className="chai-share__with-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 21s7-7.2 7-12.5A7 7 0 0 0 5 8.5C5 13.8 12 21 12 21Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+                    <circle cx="12" cy="8.5" r="2.4" fill="currentColor" />
+                  </svg>
+                  <input
+                    className="chai-field__input"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder={s.locationHint}
+                    autoComplete="address-level2"
+                    enterKeyHint="next"
+                    data-testid="chai-share-location"
+                  />
+                </span>
+              </label>
+
+              <fieldset className="chai-share__set">
+                <legend className="chai-share__big-q">{s.tried}</legend>
+                <div
+                  className="chai-tried"
+                  role="radiogroup"
+                  aria-label={s.tried}
+                  aria-invalid={error?.field === 'tried' || undefined}
+                  aria-describedby={errFor('tried')}
+                >
+                  {choices.map((ch, i) => (
                     <button
+                      key={ch.id}
                       type="button"
-                      className="chai-share__remove"
-                      onClick={() => setPhoto(null)}
-                      aria-label={s.photoRemove}
+                      role="radio"
+                      aria-checked={tried === ch.id}
+                      tabIndex={tabFor(ch.id, i)}
+                      className={`chai-tried__one${ch.big ? ' chai-tried__one--big' : ' chai-tried__one--pill'}`}
+                      data-id={ch.id}
+                      {...(i === 0 ? { 'data-field': 'tried' } : {})}
+                      onClick={() => setTried(ch.id)}
+                      onKeyDown={triedKey(i)}
+                      data-testid={`chai-share-tried-${ch.id}`}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M7 7l10 10M17 7 7 17"
-                          stroke="currentColor"
-                          strokeWidth="2.4"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      {ch.big ? (
+                        <>
+                          <img
+                            className="chai-tried__pack"
+                            src={POUCHES[ch.id as 'heritage' | 'lovely'].small}
+                            alt=""
+                            width={410}
+                            height={556}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <span className="chai-tried__tick" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="M6 12.5l4 4L18 8" pathLength={1} />
+                            </svg>
+                          </span>
+                        </>
+                      ) : (
+                        <span className="chai-tried__radio" aria-hidden="true" />
+                      )}
+                      <span className="chai-tried__name">{ch.label}</span>
                     </button>
-                  )}
-                </span>
-              </div>
-            </div>
-            <label className="chai-consent">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                data-testid="chai-share-consent"
+                  ))}
+                </div>
+              </fieldset>
+
+              <RateSlider
+                lang={lang}
+                value={rating}
+                onChange={(v) => {
+                  setRating(v);
+                  if (error?.field === 'rating') setError(null);
+                }}
+                invalid={error?.field === 'rating'}
+                describedBy={errFor('rating')}
               />
-              <span className="chai-consent__box" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M6 12.5l4 4L18 8" pathLength={1} />
-                </svg>
-              </span>
-              <span>{s.consent}</span>
-            </label>
 
-            {error && (
-              <p id={`${uid}-err`} className="chai-checkout__error" role="alert">
-                {error.text}
-              </p>
-            )}
-            <button
-              type="submit"
-              className="chai-checkout__go chai-share__go"
-              disabled={phase === 'busy'}
-              data-testid="chai-share-send"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M4 12 20 4l-6 16-2.5-6.5L4 12Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
+              <label className="chai-field">
+                <span className="chai-field__label chai-share__q">
+                  {s.thoughts} <span className="chai-field__optional">({s.optional})</span>
+                </span>
+                <textarea
+                  className="chai-field__input chai-field__input--area"
+                  value={thoughts}
+                  rows={3}
+                  maxLength={600}
+                  onChange={(e) => setThoughts(e.target.value)}
+                  placeholder={s.thoughtsHint}
+                  data-testid="chai-share-thoughts"
                 />
-              </svg>
-              {phase === 'busy' ? s.sending : s.send}
-            </button>
-          </form>
-        )}
-      </div>
+              </label>
 
-      {/* What people say: the reviews, in a folder of glass (CM-024). */}
-      <div ref={folder} className="chai-share__reviews" data-rise="">
-        <ReviewsFolder
-          lang={lang}
-          reviews={reviews}
-          drop={drop}
-          onAdd={toCard}
-          onRemove={(rev) => {
-            keepMine(rev, true);
-            setMine((m) => m.filter((x) => x.id !== rev.id));
-          }}
-        />
+              {/* A memory of the tea: two prints, the top one the visitor's own photo once added. */}
+              <div className="chai-memory" data-set={photo ? '' : undefined}>
+                <div className="chai-memory__text">
+                  <p className="chai-memory__title">
+                    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.3l1.4-2h5.6l1.4 2H18a1.5 1.5 0 0 1 1.5 1.5V11M3.5 8.5v9A1.5 1.5 0 0 0 5 19h8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="11" cy="12.5" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                      <path
+                        d="M19 15v6M16 18h6"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span>
+                      {s.memory} <span className="chai-field__optional">({s.optional})</span>
+                    </span>
+                  </p>
+                  <label className="chai-memory__add">
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect
+                        x="3.5"
+                        y="5"
+                        width="15"
+                        height="13"
+                        rx="2"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                      />
+                      <path
+                        d="m5.5 16 3.5-4 3 3 2-2 3.5 3"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M19 3v5M16.5 5.5h5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span>{photo ? s.photoChange : s.photo}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="chai-share__file"
+                      onChange={(e) => {
+                        void pickPhoto(e.target.files?.[0]);
+                        e.target.value = '';
+                      }}
+                      aria-describedby={errFor('photo')}
+                      data-testid="chai-share-photo"
+                    />
+                  </label>
+                </div>
+                <div className="chai-memory__prints">
+                  <span className="chai-memory__print chai-memory__print--under" aria-hidden="true">
+                    <img src={bannerSmall} alt="" loading="lazy" decoding="async" />
+                  </span>
+                  <span key={photo?.url ?? 'none'} className="chai-memory__print chai-memory__print--top">
+                    <img src={photo?.url ?? bannerSmall} alt="" />
+                    {photo && (
+                      <button
+                        type="button"
+                        className="chai-share__remove"
+                        onClick={() => setPhoto(null)}
+                        aria-label={s.photoRemove}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            d="M7 7l10 10M17 7 7 17"
+                            stroke="currentColor"
+                            strokeWidth="2.4"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </span>
+                </div>
+              </div>
+              <label className="chai-consent">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  data-testid="chai-share-consent"
+                />
+                <span className="chai-consent__box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6 12.5l4 4L18 8" pathLength={1} />
+                  </svg>
+                </span>
+                <span>{s.consent}</span>
+              </label>
+
+              {error && (
+                <p id={`${uid}-err`} className="chai-checkout__error" role="alert">
+                  {error.text}
+                </p>
+              )}
+              <button
+                type="submit"
+                className="chai-checkout__go chai-share__go"
+                disabled={phase === 'busy'}
+                data-testid="chai-share-send"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M4 12 20 4l-6 16-2.5-6.5L4 12Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {phase === 'busy' ? s.sending : s.send}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -570,17 +554,20 @@ function RateSlider({
   const s = copy.share;
   const track = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [tops, setTops] = useState(0);
+  /** Where the finger is along the track while it slides (0 … 1), or null: the thumb and the tea follow it
+   *  exactly, and settle on the nearest step when it lets go. */
+  const [drag, setDrag] = useState<number | null>(null);
+  const latest = useRef(value);
+  latest.current = value;
   const digits = (n: number) => (lang === 'ckb' ? toKurdishDigits(n) : String(n));
-  const word = value ? s.bands[value - 1]! : s.slide;
+  const word = value ? s.bands[value - 1]! : '';
 
   const set = (v: number) => {
     const next = Math.min(10, Math.max(1, Math.round(v)));
-    if (next === value) return;
+    if (next === latest.current) return;
+    latest.current = next;
     onChange(next);
     playTick(next);
-    if (next === 10) setTops((n) => n + 1);
     try {
       navigator.vibrate?.(next === 10 ? [10, 30, 16] : 4);
     } catch {
@@ -591,24 +578,27 @@ function RateSlider({
     const el = track.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const p = (e.clientX - r.left) / r.width;
-    set(1 + Math.min(1, Math.max(0, p)) * 9);
+    const p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    setDrag(p);
+    set(1 + p * 9);
   };
+  const at = drag ?? (value ? (value - 1) / 9 : 0);
+  const fill = drag !== null ? (1 + drag * 9) / 10 : value / 10;
 
   return (
     <div
       className="chai-rate"
       data-set={value ? '' : undefined}
       data-top={value === 10 || undefined}
-      data-drag={dragging || undefined}
+      data-drag={drag !== null || undefined}
       data-invalid={invalid || undefined}
-      style={{ '--v': value ? (value - 1) / 9 : 0, '--fill': value / 10 } as CSSProperties}
+      style={{ '--v': at, '--fill': fill } as CSSProperties}
     >
       <span className="chai-share__big-q" id="chai-rate-label">
         {s.rate}
       </span>
       <div className="chai-rate__show">
-        <TeaGlass key={tops} />
+        <TeaGlass />
         <div className="chai-rate__read" aria-hidden="true">
           <span className="chai-rate__score">
             <span key={value} className="chai-rate__n">
@@ -634,15 +624,15 @@ function RateSlider({
           onPointerDown={(e) => {
             primeChime();
             e.currentTarget.setPointerCapture(e.pointerId);
-            setDragging(true);
             input.current?.focus({ preventScroll: true });
             fromPointer(e);
           }}
           onPointerMove={(e) => {
-            if (dragging) fromPointer(e);
+            if (drag !== null) fromPointer(e);
           }}
-          onPointerUp={() => setDragging(false)}
-          onPointerCancel={() => setDragging(false)}
+          onPointerUp={() => setDrag(null)}
+          onPointerCancel={() => setDrag(null)}
+          onLostPointerCapture={() => setDrag(null)}
         >
           <span className="chai-rate__rail" aria-hidden="true">
             <span className="chai-rate__fill" />
@@ -700,7 +690,7 @@ function RateSlider({
  * A real glass of tea (the owner's mock's): the empty glass, and over it the full one shown only up to the tea's
  * level (--fill), a soft line of light on the surface; above it, steam once the tea is high; at ten, sparks.
  */
-function TeaGlass() {
+export function TeaGlass() {
   return (
     <span className="chai-glass" aria-hidden="true">
       {/* The two pictures together, laid onto the card (their white is the card's): the full glass over the

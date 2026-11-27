@@ -810,6 +810,11 @@
   scroll-margin-block-start: 4.5rem;
 }
 
+/* "How was your tea?" is a page of its own: it keeps the header's room inside it, and stops at the top. */
+.chai-main > .chai-share {
+  scroll-margin-block-start: 0;
+}
+
 .chai-main > section:focus {
   outline: none;
 }
@@ -1140,7 +1145,8 @@
 /* ---------- The pages (CM-014, CM-021) ----------
    The homepage, the shop and Our Story are three pages of one site. The homepage scrolls straight on into Our
    Story (one page under the other: the address follows the scroll); the shop is a screen of its own. */
-.chai[data-page='shop'] .chai-end {
+.chai[data-page='shop'] .chai-end,
+.chai[data-page='reviews'] :is(.chai-main, .chai-end) {
   display: none;
 }
 
@@ -2422,19 +2428,7 @@
   filter: brightness(1.06);
 }
 
-.chai-teas__more {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding-block: 0.8rem;
-  color: var(--ink);
-  font: 700 0.78rem / 1 var(--body);
-  letter-spacing: 0.2em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.chai:lang(ckb) :is(.chai-tea__tag, .chai-teas__more) {
+.chai:lang(ckb) .chai-tea__tag {
   font-family: var(--kufi);
   letter-spacing: 0;
   text-transform: none;
@@ -4417,6 +4411,7 @@ html:has(.chai-checkout) {
 }
 
 .chai-share {
+  --side: clamp(1rem, 0.6rem + 2vw, 2.25rem);
   --c-accent: #c58a12;
   --c-ink: #5b6a23;
   --c-strong: #2b2414;
@@ -4425,18 +4420,73 @@ html:has(.chai-checkout) {
   --tea: #a8481a;
   position: relative;
   z-index: 2;
+  /* A page of its own in the homepage's scroll (CM-025): at least a screen of it, from under the header. */
+  min-block-size: 100svh;
+  padding: calc(5.5rem + var(--safe-top)) var(--pad) clamp(3rem, 2.4rem + 3vw, 5rem);
+  background: var(--sun-3);
+  outline: none;
+}
+
+.chai-share__page {
   display: grid;
   justify-items: center;
-  gap: clamp(2rem, 1.4rem + 3vw, 3.5rem);
-  padding: clamp(1rem, 0.6rem + 2vw, 2.5rem) var(--pad) clamp(3rem, 2.4rem + 3vw, 5rem);
-  background: var(--sun-3);
+  gap: clamp(2rem, 1.4rem + 3vw, 3rem);
+  max-inline-size: 76rem;
+  margin-inline: auto;
+}
+
+/* Under a wide screen the picture and the reviews on one side, staying while the questions go by on the other. */
+@media (min-width: 1000px) {
+  .chai-share__page {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    align-items: start;
+    gap: clamp(2rem, 1rem + 2.5vw, 3.5rem);
+  }
+  .chai-share__side {
+    position: sticky;
+    inset-block-start: calc(5.5rem + var(--safe-top));
+    display: grid;
+    justify-items: center;
+    gap: 2.25rem;
+    inline-size: 100%;
+  }
+  .chai-share__card {
+    inline-size: 100%;
+  }
+  .chai-share__banner {
+    aspect-ratio: 1.45;
+  }
+  .chai-share__banner-img {
+    object-position: 40% 50%;
+  }
+  .chai-share__steam {
+    left: 39%;
+    inline-size: 7.5%;
+  }
+}
+
+/* Narrower: one after another — the picture, the questions, the reviews. */
+@media (max-width: 999px) {
+  .chai-share__side {
+    display: contents;
+  }
+  .chai-share__banner {
+    order: 1;
+    inline-size: min(100%, 44rem);
+  }
+  .chai-share__card {
+    order: 2;
+  }
+  .chai-share__reviews {
+    order: 3;
+  }
 }
 
 .chai-share__card {
   display: grid;
   gap: 1.35rem;
   inline-size: min(100%, 44rem);
-  padding: 0 clamp(1rem, 0.6rem + 2vw, 2.25rem) clamp(1.25rem, 0.9rem + 2vw, 2.25rem);
+  padding: clamp(1.25rem, 0.9rem + 2vw, 2.25rem) var(--side);
   overflow: hidden;
   border-radius: 28px;
   background: #fcf6ea;
@@ -4449,10 +4499,12 @@ html:has(.chai-checkout) {
    never mirrored: its words stay on the right, over the open side). */
 .chai-share__banner {
   position: relative;
-  margin-inline: calc(-1 * clamp(1rem, 0.6rem + 2vw, 2.25rem));
+  inline-size: 100%;
   aspect-ratio: 1800 / 801;
   overflow: hidden;
+  border-radius: 28px;
   background: #cfd8c4;
+  box-shadow: 0 30px 60px -36px rgb(80 40 0 / 0.65);
 }
 
 .chai-share__banner-img {
@@ -4468,9 +4520,12 @@ html:has(.chai-checkout) {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(to top, #fcf6ea, rgb(252 246 234 / 0) 22%),
-    linear-gradient(to left, rgb(252 246 234 / 0.92), rgb(252 246 234 / 0.75) 30%, rgb(252 246 234 / 0) 58%);
+  background: linear-gradient(
+    to left,
+    rgb(252 246 234 / 0.92),
+    rgb(252 246 234 / 0.75) 30%,
+    rgb(252 246 234 / 0) 58%
+  );
   pointer-events: none;
 }
 
@@ -4865,6 +4920,7 @@ html:has(.chai-checkout) {
 .chai-glass {
   --top: calc(83.3% - var(--fill) * 44.6%);
   position: relative;
+  display: block;
   flex: none;
   inline-size: clamp(7.5rem, 6rem + 6vw, 10rem);
   aspect-ratio: 560 / 600;
@@ -5005,9 +5061,10 @@ html:has(.chai-checkout) {
 /* The track: the whole of it (and a little around it) takes a finger. */
 .chai-rate__track {
   position: relative;
-  block-size: 46px;
+  block-size: 56px;
   cursor: pointer;
-  touch-action: pan-y;
+  /* A finger on the track slides the rating, and never the page (CM-025). */
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -5065,9 +5122,9 @@ html:has(.chai-checkout) {
   position: absolute;
   inset-block-start: 50%;
   left: calc(var(--v) * 100%);
-  inline-size: 30px;
-  block-size: 30px;
-  margin: -15px 0 0 -15px;
+  inline-size: 34px;
+  block-size: 34px;
+  margin: -17px 0 0 -17px;
   border: 3px solid var(--gold);
   border-radius: 50%;
   background: #fff;
@@ -5355,8 +5412,29 @@ html:has(.chai-checkout) {
 
 /* A phone: a taller cut of the banner — the glass and most of the pack on the left, the words on the right. */
 @media (max-width: 560px) {
+  /* A phone: from edge to edge — the picture under the header, the questions on a sheet that rises over its
+     foot, the reviews after them. */
+  .chai-share {
+    padding: calc(4.6rem + var(--safe-top)) 0 3rem;
+  }
   .chai-share__banner {
     aspect-ratio: 1.55;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .chai-share__card {
+    position: relative;
+    z-index: 1;
+    margin-block-start: calc(-1 * clamp(2rem, 6vw, 2.5rem));
+    border-radius: 26px 26px 0 0;
+    box-shadow: 0 -18px 30px -24px rgb(80 40 0 / 0.5);
+  }
+  .chai-share__page {
+    gap: 0;
+  }
+  .chai-share__reviews {
+    margin-block-start: 2.5rem;
+    padding-inline: var(--pad);
   }
   .chai-share__banner-img {
     object-position: 48% 50%;
@@ -5604,6 +5682,21 @@ html:has(.chai-checkout) {
     0 0 0 2.5px #fff,
     0 0 0 4.5px transparent;
   position: relative;
+}
+
+.chai-sheet__avatar {
+  /* Its ring stays under it wherever it is drawn (a sheet, a card): the ring, then the white face over it. */
+  isolation: isolate;
+  background: none !important;
+}
+
+.chai-sheet__avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: #fff;
 }
 
 .chai-sheet__avatar::before {
@@ -6200,5 +6293,463 @@ html:has(.chai-checkout) {
   }
   .chai-folder__tilt {
     transform: none;
+  }
+}
+
+/* While a finger slides, the thumb, the gold and the tea follow it exactly; let go, they settle on the step. */
+.chai-rate[data-drag] :is(.chai-rate__thumb, .chai-rate__fill) {
+  transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.chai-rate[data-drag] :is(.chai-glass__tea, .chai-glass__surface) {
+  transition-duration: 0.08s;
+  transition-timing-function: linear;
+}
+
+.chai-rate__read {
+  min-block-size: 6.2rem;
+  align-content: center;
+}
+
+.chai-rate__word:empty {
+  display: none;
+}
+
+/* ==========================================================================
+   The reviews page (CM-025): what people make of the teas, all of it.
+   ========================================================================== */
+.chai:not([data-page='reviews']) .chai-rp {
+  display: none;
+}
+
+.chai-rp {
+  --gold: #d99a17;
+  --tea: #a8481a;
+  --c-accent: #c58a12;
+  --c-strong: #2b2414;
+  --c-glow: #f3b72b;
+  position: relative;
+  z-index: 2;
+  min-block-size: 100svh;
+  padding: calc(5.5rem + var(--safe-top)) var(--pad) 4rem;
+  background:
+    radial-gradient(60rem 30rem at 80% -10%, rgb(255 255 255 / 0.45), transparent 60%),
+    linear-gradient(180deg, var(--sun-2), var(--sun-3) 40%, #f9dc8c);
+  outline: none;
+}
+
+.chai-rp__inner {
+  display: grid;
+  gap: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  max-inline-size: 72rem;
+  margin-inline: auto;
+  animation: chai-win-up 0.6s var(--ease-out) both;
+}
+
+.chai-rp__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: start;
+  min-block-size: 44px;
+  padding: 0 1rem 0 0.7rem;
+  border: 1px solid rgb(22 19 15 / 0.14);
+  border-radius: var(--radius-pill);
+  background: rgb(255 250 240 / 0.7);
+  color: var(--ink);
+  font: 600 0.9rem / 1 var(--body);
+  cursor: pointer;
+}
+
+.chai-rp__back svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[dir='rtl'] .chai-rp__back svg {
+  transform: scaleX(-1);
+}
+
+.chai-rp__head {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.chai-rp__title {
+  margin: 0;
+  color: var(--ink);
+  font: 600 clamp(2.2rem, 1.5rem + 3vw, 3.8rem) / 1.02 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.chai:lang(ckb) .chai-rp__title {
+  font-family: var(--kufi);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.chai-rp__lede {
+  margin: 0;
+  max-inline-size: 36rem;
+  color: rgb(22 19 15 / 0.75);
+  font: 500 1rem / 1.5 var(--body);
+}
+
+/* On average: a glass of tea filled to it, the number, and each blend's own. */
+.chai-rp__summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 0.5rem + 2vw, 2.5rem);
+  padding: clamp(1rem, 0.8rem + 1vw, 1.6rem) clamp(1rem, 0.8rem + 1.5vw, 2rem);
+  border-radius: 26px;
+  background: #fffaf1;
+  box-shadow:
+    0 26px 50px -32px rgb(80 40 0 / 0.6),
+    0 0 0 1px rgb(120 70 0 / 0.08);
+}
+
+.chai-rp__glass .chai-glass {
+  inline-size: clamp(6rem, 5rem + 4vw, 8.5rem);
+}
+
+.chai-rp__glass[data-set] .chai-glass__surface {
+  opacity: 0.9;
+}
+
+.chai-rp__glass[data-set] .chai-glass__steam {
+  opacity: clamp(0, (var(--fill) - 0.5) * 2, 1);
+}
+
+.chai-rp__glass .chai-glass__tea {
+  transition-duration: 1.4s;
+}
+
+.chai-rp__avg {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.chai-rp__avg-n {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  direction: ltr;
+}
+
+.chai-rp__avg-n b {
+  color: var(--gold);
+  font: 700 clamp(3rem, 2.4rem + 3vw, 4.4rem) / 1 var(--serif);
+}
+
+.chai-rp__avg-n span {
+  color: var(--ink);
+  font: 600 1.6rem / 1 var(--serif);
+}
+
+.chai-rp__avg-of {
+  color: rgb(22 19 15 / 0.65);
+  font: 600 0.9rem / 1.2 var(--body);
+}
+
+.chai-rp__blends {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-rp__blends li {
+  display: grid;
+  grid-template-columns: auto minmax(6rem, auto) minmax(4rem, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.chai-rp__blends img {
+  inline-size: 26px;
+  block-size: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgb(40 20 0 / 0.25));
+}
+
+.chai-rp__blend-name {
+  color: var(--ink);
+  font: 600 0.88rem / 1.2 var(--body);
+}
+
+.chai-rp__bar {
+  position: relative;
+  block-size: 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgb(22 19 15 / 0.08);
+}
+
+.chai-rp__bar i {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f0c043, var(--gold));
+  transition: inline-size 1.2s var(--ease-out);
+}
+
+.chai-rp__bar i[data-blend='lovely'] {
+  background: linear-gradient(90deg, #e46a6f, #c62026);
+}
+
+.chai-rp__blend-avg {
+  color: var(--ink);
+  font: 700 0.95rem / 1 var(--serif);
+  direction: ltr;
+}
+
+@media (max-width: 760px) {
+  .chai-rp__summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .chai-rp__blends {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Which tea, and in what order. */
+.chai-rp__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.chai-rp__filters,
+.chai-rp__order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chai-rp__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-block-size: 40px;
+  padding: 0 0.95rem;
+  border: 1px solid rgb(22 19 15 / 0.14);
+  border-radius: var(--radius-pill);
+  background: rgb(255 250 240 / 0.7);
+  color: var(--ink);
+  font: 600 0.85rem / 1 var(--body);
+  cursor: pointer;
+  transition:
+    background-color 0.25s var(--ease),
+    color 0.25s var(--ease),
+    transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.chai-rp__chip span {
+  color: rgb(22 19 15 / 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.chai-rp__chip:active {
+  transform: scale(0.96);
+}
+
+.chai-rp__chip[aria-pressed='true'] {
+  border-color: var(--c-strong);
+  background: var(--c-strong);
+  color: #fff7e6;
+}
+
+.chai-rp__chip[aria-pressed='true'] span {
+  color: rgb(255 247 230 / 0.65);
+}
+
+.chai-rp__chip--quiet[aria-pressed='true'] {
+  border-color: var(--gold);
+  background: #fff;
+  color: var(--ink);
+}
+
+/* The reviews: cards of the pack's paper, in columns that fill as they come. */
+.chai-rp__grid {
+  columns: 3 19rem;
+  column-gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chai-rp__grid li {
+  break-inside: avoid;
+  margin-block-end: 1rem;
+  animation: chai-win-up 0.55s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 60ms + 0.1s);
+}
+
+.chai-rcard {
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 1.05rem 1.1rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fffdf8, #fbf3e3);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 0.5px rgb(80 50 0 / 0.14),
+    0 16px 30px -22px rgb(60 30 0 / 0.5);
+  transition:
+    transform 0.4s cubic-bezier(0.3, 1.5, 0.5, 1),
+    box-shadow 0.3s var(--ease);
+}
+
+.chai-rcard:hover {
+  transform: translateY(-3px) rotate(-0.4deg);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 0.5px rgb(80 50 0 / 0.14),
+    0 24px 40px -24px rgb(60 30 0 / 0.6);
+}
+
+.chai-rcard[data-lit] {
+  animation: chai-rcard-lit 1.6s var(--ease-out);
+}
+
+@keyframes chai-rcard-lit {
+  0%,
+  40% {
+    box-shadow:
+      0 0 0 3px var(--gold),
+      0 24px 40px -24px rgb(60 30 0 / 0.6);
+  }
+}
+
+.chai-rcard__open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.chai-rcard__open:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+.chai-rcard__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.chai-rcard__name {
+  overflow: hidden;
+  font: 700 0.98rem / 1.2 var(--body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chai-rcard__band {
+  margin: 0;
+  color: rgb(22 19 15 / 0.7);
+  font: 700 0.8rem / 1.3 var(--body);
+}
+
+.chai-rcard__band span {
+  font-weight: 500;
+}
+
+.chai-rcard__note {
+  margin: 0;
+  color: rgb(22 19 15 / 0.85);
+  font: 400 1rem / 1.55 var(--serif);
+}
+
+.chai-rcard__photo {
+  justify-self: start;
+  inline-size: 7rem;
+  block-size: 7rem;
+  padding: 5px 5px 14px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 8px 18px -10px rgb(40 20 0 / 0.55);
+  transform: rotate(-3deg);
+  transition: transform 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.chai-rcard:hover .chai-rcard__photo {
+  transform: rotate(1deg) scale(1.04);
+}
+
+.chai-rcard__photo img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.chai-rcard__tag {
+  position: static;
+  justify-self: start;
+}
+
+.chai-rp__empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  border: 1.5px dashed rgb(120 70 0 / 0.35);
+  border-radius: 26px;
+  background: rgb(255 250 240 / 0.6);
+  text-align: center;
+}
+
+.chai-rp__empty img {
+  inline-size: 7.5rem;
+  block-size: 7.5rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--gold);
+}
+
+.chai-rp__empty-title {
+  margin: 0.6rem 0 0;
+  color: var(--ink);
+  font: 600 1.5rem / 1.2 var(--serif);
+}
+
+.chai-rp__empty-sub,
+.chai-rp__none {
+  margin: 0;
+  color: rgb(22 19 15 / 0.7);
+  font: 500 0.95rem / 1.5 var(--body);
+}
+
+.chai-rp__cta {
+  display: grid;
+  justify-items: center;
+  margin-block-start: 0.5rem;
+}
+
+.chai-rp__cta .chai-share__go {
+  inline-size: min(100%, 26rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chai-rp__inner,
+  .chai-rp__grid li,
+  .chai-rcard[data-lit] {
+    animation: none !important;
   }
 }

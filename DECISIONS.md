@@ -1,5 +1,29 @@
 # Decisions
 
+## CM-025 · 2026-11-27 · "How was your tea?" a page of its own, an easier rating, and the reviews page
+
+The owner: after the blends, "How was your tea?" should be an actual page — wider, its own — though the site
+stays one big page; the rating's glass and slider "don't function really well" and should be easier; and the
+reviews should open onto a page of their own with what people said.
+
+- **A page in the scroll** (`/share`): the homepage runs on from the blends into "How was your tea?" and then
+  into Our Story; each takes its address as it reaches the header (no new history entry), and `/share` opens the
+  homepage scrolled to it. It fills at least a screen, from under the header. On a wide screen the picture and
+  the reviews' folder stay on one side while the questions go by on the other; on a phone it runs from edge to
+  edge — the picture under the header, the questions on a sheet rising over its foot, the folder after them.
+  The small "Our Story" link under the blends is gone (Our Story simply follows).
+- **The rating, easier:** a finger on the track slides the rating and never the page (the track is a larger
+  target); while it slides, the thumb, the gold and the tea follow the finger exactly (no lag), and on letting go
+  they settle on the nearest step with a little spring. The glass is no longer redrawn at ten (which made it
+  flicker); "Slide to rate" is said once.
+- **The reviews page** (`/reviews`): tapping the folder opens it (the glass falls, the reviews rise) and goes
+  there; a review tapped in the folder is brought into view there and lit. It shows what people make of the
+  teas — a glass of tea filled to the average, the number, each blend's own average (a review of both counts for
+  both) — the reviews as cards (who, from where, when, the rating with a little glass, the word for it, the tea,
+  their words, their photo as a print), for one tea or all, newest or highest first; a card opens to read it
+  whole, its photo developing, and on to the next. "Back" and "Share your experience" go to `/share`. With no
+  reviews yet it says so, with Mama, and nothing is made up.
+
 ## CM-024 · 2026-11-27 · the share card after the owner's mock, and the reviews in a folder of glass
 
 The owner sent a mock of a better "How was your tea?" (a picture across the top, the two packs large, a real

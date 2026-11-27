@@ -17,8 +17,6 @@ interface Props {
   lang: Locale;
   /** Buy a blend: to the shop, with it chosen. */
   onBuy: (id: BlendId) => void;
-  /** On to Our Story. */
-  onStory: () => void;
 }
 
 const packOf = (b: BlendId) => (b === 'lovely' ? packLovelyUrl : pouchUrl);
@@ -28,7 +26,7 @@ const packOf = (b: BlendId) => (b === 'lovely' ? packLovelyUrl : pouchUrl);
  * the owner's words about it, what is in it, and Buy now at the owner's price (to the shop, with it chosen).
  * Each card rises in once as it first comes into view.
  */
-export default function Teas({ lang, onBuy, onStory }: Props) {
+export default function Teas({ lang, onBuy }: Props) {
   const root = useRef<HTMLElement>(null);
   const t = copy.teas;
   const price = formatIqd(unitPrice('pouch'), lang);
@@ -129,10 +127,6 @@ export default function Teas({ lang, onBuy, onStory }: Props) {
           );
         })}
       </div>
-      <a className="chai-teas__more" href={pathOf('about')} onClick={plainClick(onStory)}>
-        <span>{copy.about.title}</span>
-        <Arrow />
-      </a>
     </section>
   );
 }

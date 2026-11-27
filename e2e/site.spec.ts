@@ -397,10 +397,14 @@ test.describe('Chai Mama — two blends, one place', () => {
     // reaches the header the page is Our Story — its address, its link lit — with no new history entry.
     const entries = await page.evaluate(() => history.length);
     await page.mouse.move(700, 400);
-    for (let i = 0; i < 40 && !/\/about$/.test(page.url()); i++) {
-      await page.mouse.wheel(0, 500);
+    const seen = new Set<string>();
+    for (let i = 0; i < 60 && !/\/about$/.test(page.url()); i++) {
+      await page.mouse.wheel(0, 400);
       await page.waitForTimeout(120);
+      seen.add(new URL(page.url()).pathname);
     }
+    // On the way, "How was your tea?" is a page of its own in the scroll (CM-025).
+    expect([...seen]).toContain('/share');
     await expect(page).toHaveURL(/\/about$/);
     await expect(site(page)).toHaveAttribute('data-page', 'about');
     await expect(
@@ -787,7 +791,7 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     await expect(co).toBeHidden();
   });
 
-  test('share your experience: which tea, a rating slid along a glass of tea, a photo, and Mama thanks you (CM-023)', async ({
+  test('share your experience: which tea, a rating slid along a glass of tea, a photo, Mama thanks you, and the reviews page (CM-023, CM-025)', async ({
     page,
   }) => {
     const errors = consoleErrors(page);
@@ -874,31 +878,43 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     // It drops into the folder of reviews below, as the visitor's own and as not sent (CM-024).
     const folder = share.getByTestId('chai-reviews');
     await expect(
-      folder.getByRole('button', { name: /Open the reviews — 1 review · 10\/10 on average/ }),
+      folder.getByRole('button', { name: /See all reviews — 1 review · 10\/10 on average/ }),
     ).toBeAttached({
       timeout: 6000,
     });
+    // The folder opens onto the reviews page (CM-025).
     await folder.getByTestId('chai-reviews-open').click();
-    await expect(folder.getByTestId('chai-reviews-open')).toHaveAttribute('aria-expanded', 'true');
-    const sheet = folder.getByTestId('chai-review');
-    await expect(sheet).toHaveCount(1);
-    await expect(sheet).toContainText('Rahand Mhamad');
-    await expect(sheet).toContainText('Not sent yet');
-    await sheet.click();
+    await expect(page).toHaveURL(/\/reviews$/);
+    const reviewsPage = page.getByTestId('chai-reviews-page');
+    await expect(reviewsPage.getByRole('heading', { level: 1, name: 'What people say' })).toBeVisible();
+    const card = reviewsPage.getByTestId('chai-review-card');
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText('Rahand Mhamad');
+    await expect(card).toContainText('Not sent yet');
+    await expect(card.locator('.chai-rcard__photo img')).toHaveAttribute('src', /^data:image\/jpeg/);
+    await card.getByRole('button', { name: /Rahand Mhamad/ }).click();
     const open = page.getByTestId('chai-review-open');
     await expect(open.getByRole('dialog', { name: 'Rahand Mhamad' })).toBeVisible();
     await expect(open).toContainText('Lovely after dinner.');
     await expect(open).toContainText('Tried: The Lovely Blend');
-    await expect(open.locator('.chai-review__photo img')).toHaveAttribute('src', /^data:image\/jpeg/);
-    await expect(sheet.locator('.chai-sheet__peek')).toBeAttached();
-    // Kept on this device: still there after a reload; removed when asked.
+    await page.keyboard.press('Escape');
+    await expect(open).toBeHidden();
+    // Kept on this device: still there after a reload (the page by its address); removed when asked.
     await page.reload();
-    await page.getByTestId('chai-share').scrollIntoViewIfNeeded();
-    await page.getByTestId('chai-reviews-open').click();
-    await page.getByTestId('chai-review').click();
+    await expect(page.getByTestId('chai-review-card')).toHaveCount(1);
+    await page.getByTestId('chai-review-card').getByRole('button').click();
     await page.getByTestId('chai-review-open').getByRole('button', { name: 'Remove' }).click();
-    await expect(page.getByTestId('chai-review')).toHaveCount(0);
-    await expect(page.getByTestId('chai-reviews')).toContainText('No reviews yet');
+    await expect(page.getByTestId('chai-review-card')).toHaveCount(0);
+    await expect(page.getByTestId('chai-reviews-empty')).toContainText('No reviews yet');
+    // Back: to "How was your tea?", its own address in the homepage's scroll.
+    await page
+      .getByTestId('chai-reviews-page')
+      .getByRole('button', { name: 'Share your experience' })
+      .click();
+    await expect(page).toHaveURL(/\/share$/);
+    await expect
+      .poll(() => page.locator('#chai-share').evaluate((el) => Math.round(el.getBoundingClientRect().top)))
+      .toBeLessThan(4);
     expect(errors).toEqual([]);
   });
 
