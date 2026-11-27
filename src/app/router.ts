@@ -20,5 +20,15 @@ export function navigate(page: ChaiPage): void {
   routerStore.setState({ page });
 }
 
+/**
+ * The page the visitor has scrolled into (the homepage runs straight on into Our Story, CM-021): its address
+ * replaces the current one (no new history entry), and the page knows it is there; nothing else moves.
+ */
+export function settle(page: ChaiPage): void {
+  if (page === routerStore.getState().page) return;
+  window.history.replaceState(null, '', pathOf(page) + window.location.search);
+  routerStore.setState({ page });
+}
+
 /** The page shown, re-rendering the caller when it changes. */
 export const usePage = (): ChaiPage => useStore(routerStore, (s) => s.page);

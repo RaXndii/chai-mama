@@ -2,9 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The Chai Mama website: it opens in a cloud that clears onto the owner's picture; two blends in one place, one
- * shot (Heritage Blend in the earlier light, The Lovely Blend later in the day); three pages (the homepage, the
- * shop, Our Story) with real addresses. Runs in software WebGL-free Chromium: the timelines follow the wall
+ * The Chai Mama website: it opens ready on the owner's picture; two blends in one place, one shot (Heritage
+ * Blend in the earlier light, The Lovely Blend later in the day); three pages (the homepage running on into Our
+ * Story, and the shop) with real addresses. Runs in software WebGL-free Chromium: the timelines follow the wall
  * clock, so a few seconds each.
  */
 test.describe.configure({ timeout: process.env.CI ? 300_000 : 150_000 });
@@ -77,16 +77,20 @@ const reveal = (page: Page) =>
 const scrollTop = (page: Page) => page.evaluate(() => window.scrollY);
 
 test.describe('Chai Mama — the opening', () => {
-  test('it opens in a cloud that clears onto the picture, and has no detectable WCAG A/AA violations', async ({
+  test('it opens ready: the picture, the words and the buttons at once; no WCAG A/AA violations', async ({
     page,
   }) => {
     const errors = consoleErrors(page);
-    await page.goto('/');
-    // In the cloud, then the camera glides in as the mist clears.
-    await expect(site(page)).toHaveAttribute('data-stage', /cloud|arriving/);
-    await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    expect(await opacity(page, '.chai-veil')).toBe(0);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // Nothing to wait through (CM-021): no cloud, no glide; the words and the buttons are there and in use
+    // from the first frame, and the picture fades in as soon as it has arrived.
+    await expect(site(page)).toHaveAttribute('data-stage', 'home');
+    await expect(page.locator('.chai-veil')).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 1, name: SLOGAN })).toBeVisible();
+    expect(await opacity(page, '.chai-hero__copy > *:first-child')).toBe(1);
+    expect(await opacity(page, '.chai-header')).toBe(1);
+    await expect(page.locator('.chai-stage')).toHaveAttribute('data-ready', /.*/);
+    await expect.poll(() => opacity(page, '.chai-stage')).toBe(1);
     // The shop's own page: the real pouch on its rock and the pack's own blend.
     await toShop(page);
     await expect(shop(page).getByRole('heading', { level: 2, name: 'Heritage Blend' })).toBeVisible();
@@ -381,22 +385,28 @@ test.describe('Chai Mama — two blends, one place', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Our Story is its own page — the brand, its name and how it is made — then Connect, on the dark of the ink', async ({
+  test('the homepage scrolls straight on into Our Story — the brand, its name and how it is made — then Connect', async ({
     page,
   }) => {
     const errors = consoleErrors(page);
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
-    // CM-007's curtain footer is gone (CM-011), and Our Story is not under the homepage (CM-014).
     await expect(page.locator('.mf, .mf-curtain')).toHaveCount(0);
     const about = page.locator('#chai-about');
-    await expect(about).toBeHidden();
-    // From the end of the homepage, on to it.
-    await page.getByTestId('chai-teas').scrollIntoViewIfNeeded();
-    await page.getByTestId('chai-teas').getByRole('link', { name: 'Our Story' }).click();
+    // Scrolling on past the teas, nothing to press (CM-021): Our Story comes up under them, and as its ink
+    // reaches the header the page is Our Story — its address, its link lit — with no new history entry.
+    const entries = await page.evaluate(() => history.length);
+    await page.mouse.move(700, 400);
+    for (let i = 0; i < 40 && !/\/about$/.test(page.url()); i++) {
+      await page.mouse.wheel(0, 500);
+      await page.waitForTimeout(120);
+    }
     await expect(page).toHaveURL(/\/about$/);
     await expect(site(page)).toHaveAttribute('data-page', 'about');
-    await expect(hero(page)).toBeHidden();
+    await expect(
+      page.getByRole('navigation', { name: 'Chai Mama' }).getByRole('link', { name: 'About' }),
+    ).toHaveAttribute('aria-current', 'true');
+    expect(await page.evaluate(() => history.length)).toBe(entries);
     await expect(about.getByRole('heading', { level: 2, name: 'Our Story' })).toBeVisible();
     await expect(about.getByText('A journey of love, heritage, and the perfect cup of tea.')).toBeVisible();
     await expect(about.getByText(/The name “Mama” means “uncle” in Kurdish/)).toBeVisible();
@@ -418,6 +428,9 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(page.locator('#chai-connect').getByRole('button', { name: 'کوردی' })).toBeVisible();
     await footer.getByRole('button', { name: 'Back to the top' }).click();
     await expect.poll(() => scrollTop(page)).toBeLessThan(5);
+    // Back at the top it is the homepage again.
+    await expect(page).toHaveURL(/:\d+\/$/);
+    await expect(site(page)).toHaveAttribute('data-page', 'home');
     expect(errors).toEqual([]);
   });
 
@@ -430,25 +443,27 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(about.locator('.chai-step__n').first()).toHaveText('١');
   });
 
-  test('the nav: Home, About, Shop and Connect are pages of the site; Back goes back', async ({ page }) => {
+  test('the nav: Home, About, Shop and Connect take you there; Back goes back', async ({ page }) => {
     const errors = consoleErrors(page);
     await page.goto('/');
     await expect(site(page)).toHaveAttribute('data-stage', 'home', { timeout: LONG });
     await page.evaluate(() => ((window as unknown as { __stay: boolean }).__stay = true));
     const nav = page.getByRole('navigation', { name: 'Chai Mama' });
+    const storyTop = () =>
+      page.locator('#chai-end').evaluate((el) => Math.round(el.getBoundingClientRect().top));
     await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'true');
-    for (const [name, url, id] of [
-      ['About', /\/about$/, 'chai-about'],
-      ['Shop', /\/shop$/, 'chai-shop'],
-    ] as const) {
-      await nav.getByRole('link', { name }).click();
-      // Its own address, its link marked as the current one, and the page from its top.
-      await expect(page).toHaveURL(url);
-      await expect(nav.getByRole('link', { name })).toHaveAttribute('aria-current', 'true');
-      await expect(page.getByTestId(id === 'chai-shop' ? 'chai-shop' : 'chai-site').first()).toBeVisible();
-      await expect.poll(() => scrollTop(page)).toBeLessThan(5);
-    }
-    // Connect is Our Story's last part: that page, scrolled to it.
+    // About: a glide down the homepage to Our Story.
+    await nav.getByRole('link', { name: 'About' }).click();
+    await expect(page).toHaveURL(/\/about$/);
+    await expect(nav.getByRole('link', { name: 'About' })).toHaveAttribute('aria-current', 'true');
+    await expect.poll(storyTop).toBeLessThan(80);
+    // The shop: its own page, from its top.
+    await nav.getByRole('link', { name: 'Shop' }).click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(nav.getByRole('link', { name: 'Shop' })).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByTestId('chai-shop')).toBeVisible();
+    await expect.poll(() => scrollTop(page)).toBeLessThan(5);
+    // Connect is Our Story's last part: scrolled to it.
     await nav.getByRole('link', { name: 'Connect' }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect
@@ -458,20 +473,19 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(
       page.getByText("Chai Mama's contact details and social links aren't on the site yet."),
     ).toBeVisible();
+    // Home: back up to the top.
     await nav.getByRole('link', { name: 'Home' }).click();
     await expect(page).toHaveURL(/:\d+\/$/);
+    await expect.poll(() => scrollTop(page)).toBeLessThan(5);
     await expect(hero(page)).toBeVisible();
-    // The browser's Back goes through the pages in turn (Home ← Connect ← Shop ← About ← Home).
-    await page.goBack();
-    await expect(page).toHaveURL(/\/about$/);
+    // The browser's Back: the shop, then Our Story where it was left (the homepage and Our Story are one page).
     await page.goBack();
     await expect(page).toHaveURL(/\/shop$/);
     await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'in');
     await page.goBack();
     await expect(page).toHaveURL(/\/about$/);
-    await page.goBack();
-    await expect(page).toHaveURL(/:\d+\/$/);
     await expect(page.locator('.chai-journey')).toHaveAttribute('data-shop', 'off');
+    await expect.poll(storyTop).toBeLessThan(80);
     // All of it in the site: no reload.
     expect(await page.evaluate(() => (window as unknown as { __stay?: boolean }).__stay)).toBe(true);
     // The language list closes on Escape without leaving the page (Escape is otherwise "back").
@@ -480,7 +494,7 @@ test.describe('Chai Mama — two blends, one place', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#chai-lang-list')).toBeHidden();
     await expect(page.getByTestId('chai-lang')).toBeFocused();
-    await expect(page).toHaveURL(/:\d+\/$/);
+    await expect(page).toHaveURL(/\/about$/);
     expect(errors).toEqual([]);
   });
 
@@ -497,6 +511,11 @@ test.describe('Chai Mama — two blends, one place', () => {
     await expect(
       page.locator('#chai-about').getByRole('heading', { level: 2, name: 'Our Story' }),
     ).toBeVisible();
+    // The homepage, already scrolled down to Our Story (the teas are just above).
+    expect(
+      Math.abs(await page.locator('#chai-end').evaluate((el) => el.getBoundingClientRect().top)),
+    ).toBeLessThan(2);
+    await expect(page.getByTestId('chai-teas')).toBeAttached();
     expect(errors).toEqual([]);
   });
 

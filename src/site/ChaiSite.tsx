@@ -12,14 +12,12 @@ import {
 } from 'react';
 import { flushSync } from 'react-dom';
 import { qualityStore } from '@/app/quality';
-import { navigate, usePage } from '@/app/router';
+import { navigate, settle, usePage } from '@/app/router';
 import { chaimama as copy, useLocale } from '@/content';
 import { BLENDS, type BlendId } from '@/content/chaimama';
 import { LOCALES } from '@/content/types';
-import { ARRIVAL, ARRIVAL_CALM, CLOUD_VEIL } from '../entrance';
 import { pathOf, type ChaiPage } from '../routes';
 import {
-  arrivalPose,
   LAYERS,
   layerPlacement,
   layersFor,
@@ -46,8 +44,8 @@ import './chai.css';
 /**
  * The Chai Mama website.
  *
- * It opens in a cloud: the mist clears onto the owner's picture and the camera glides in — the pack on the
- * mossy rock, the tea rows, the valley in its mist, then the page's words.
+ * It opens ready (CM-021): the owner's picture, the words and every button are there at once — nothing to wait
+ * through; the picture fades in the moment it has arrived.
  *
  * Two blends, one place, one shot (CM-008): Heritage Blend stands there in the clearer, earlier light;
  * choosing The Lovely Blend lets a little of the day go by — the sun travels down toward the ranges, the clouds
@@ -58,17 +56,16 @@ import './chai.css';
  * With a mouse, the far country is a touch soft with the air, and a soft window of clarity follows the
  * pointer across it (CM-007); the pack, the rock and the words stay sharp.
  *
- * Three pages (CM-014): the homepage, the shop and Our Story. The shop is deeper into the same shot (CM-010):
+ * Three pages (CM-014): the homepage, the shop and Our Story — the homepage scrolls straight on into Our Story
+ * (CM-021), whose address it takes as it comes up. The shop is deeper into the same shot (CM-010):
  * going there, the picture stays where it is while the camera moves in a little toward the rock, the hero's
  * words go, the warm light of the chosen blend comes across the valley from the open side and the shop rises
  * into that light — one short move, played backwards on the way home. Choosing a blend in the shop is the same
- * one-shot change of light as in the hero, and the shop's colours follow it. Our Story, on the pack's ink, comes
- * in by a cross-fade. Real loose tea falls on every page (CM-012).
+ * one-shot change of light as in the hero, and the shop's colours follow it.
  */
-type Stage = 'cloud' | 'arriving' | 'home';
 
-/** Never hold the visitor in the cloud for the hero's images longer than this. */
-const IMAGE_WAIT_MS = 4000;
+/** The picture fades in when it has arrived, or after this long with whatever has. */
+const PICTURE_WAIT_MS = 2500;
 /** A switch: the words fade out, then the new blend's come in (ms; quicker under reduced motion). */
 const COPY_OUT_MS = 380;
 const CALM_COPY_OUT_MS = 180;
@@ -141,8 +138,6 @@ export default function ChaiSite() {
   const page = usePage();
   const pageRef = useRef(page);
   pageRef.current = page;
-  const [stage, setStage] = useState<Stage>('cloud');
-  const mist = useRef<HTMLDivElement>(null);
   const layerEls = useRef<(HTMLDivElement | null)[]>([]);
   const stageEl = useRef<HTMLDivElement>(null);
   const heroEl = useRef<HTMLElement>(null);
@@ -176,7 +171,7 @@ export default function ChaiSite() {
   const [switching, setSwitching] = useState(false);
   /** A carton is chosen in the shop: two more pouches fan out behind the pack (CM-018). */
   const [carton, setCarton] = useState(false);
-  /** Once a switch has happened, the words come back without the entrance's stagger. */
+  /** Once a switch has happened, the words come back without the first stagger. */
   const [switched, setSwitched] = useState(false);
   // The other time of day's plates load once the page is at rest (or at once when the visitor asks).
   const [bothTimes, setBothTimes] = useState(false);
@@ -274,69 +269,28 @@ export default function ChaiSite() {
     return () => c.stop();
   }, []);
 
-  // The way in: from the cloud the page opens in, onto the picture (stopped if the page goes first).
-  useEffect(
-    () => runEntrance(false, false),
-    // Runs once, on the first render's refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  /**
-   * From the cloud to the page: `direct` opens it at rest; otherwise the mist clears as the camera glides in —
-   * calmly under reduced motion or in lite. Returns cancel.
-   */
-  function runEntrance(direct: boolean, faded: boolean) {
-    const pose: Pose = { x: 0, y: 0, z: 0 };
-    let raf = 0;
-    let done = false;
-    const setMist = (o: number) => {
-      if (mist.current) mist.current.style.opacity = String(o);
-    };
-    const home = () => {
-      done = true;
-      place({ x: 0, y: 0, z: 0 });
-      setMist(0);
-      setStage('home');
-    };
-    if (direct) {
-      home();
-      return () => {};
+  // The picture fades in as soon as its first images are decoded (at once when they already are); the page is in
+  // use the whole time.
+  useLayoutEffect(() => {
+    const el = stageEl.current;
+    if (!el) return;
+    const imgs = [...el.querySelectorAll<HTMLImageElement>('img[data-first]')];
+    if (imgs.every((im) => im.complete && im.naturalWidth)) {
+      el.dataset.ready = 'now';
+      return;
     }
-    const calm = faded || qualityStore.getState().reducedMotion || qualityStore.getState().tier === 'lite';
-    setMist(1);
-    place(arrivalPose(0, calm, pose));
-    // Inside the cloud until the picture is decoded (it is normally in by now), never longer than the cap.
-    const imgs = [...(stageEl.current?.querySelectorAll<HTMLImageElement>('img[data-first]') ?? [])];
-    const decoded = Promise.all(imgs.map((el) => el.decode().catch(() => {})));
-    const capped = Promise.race([decoded, new Promise((r) => setTimeout(r, IMAGE_WAIT_MS))]);
-    void capped.then(() => {
-      if (done) return;
-      setStage('arriving');
-      const dur = (calm ? ARRIVAL_CALM : ARRIVAL) * 1000;
-      const clear = calm ? 900 : 1300;
-      // The glide's clock starts on its first drawn frame (a busy first frame must not skip it).
-      let a0 = -1;
-      const step = (now: number) => {
-        if (done) return;
-        if (a0 < 0) a0 = now;
-        const ms = now - a0;
-        place(arrivalPose(ms / dur, calm, pose));
-        setMist(1 - smooth(ms, 0, clear));
-        if (ms >= dur) return home();
-        raf = requestAnimationFrame(step);
-      };
-      raf = requestAnimationFrame(step);
+    let live = true;
+    const decoded = Promise.all(imgs.map((im) => im.decode().catch(() => {})));
+    void Promise.race([decoded, new Promise((r) => setTimeout(r, PICTURE_WAIT_MS))]).then(() => {
+      if (live) el.dataset.ready = '';
     });
     return () => {
-      done = true;
-      cancelAnimationFrame(raf);
+      live = false;
     };
-  }
+  }, []);
 
   // At rest, the hero breathes with the pointer: the camera sways a few centimetres (desktop only).
   useEffect(() => {
-    if (stage !== 'home') return;
     const fine = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
     if (!fine || qualityStore.getState().reducedMotion) return;
     const target = { x: 0, y: 0 };
@@ -359,12 +313,12 @@ export default function ChaiSite() {
       window.removeEventListener('pointermove', onMove);
       cancelAnimationFrame(raf);
     };
-  }, [stage]);
+  }, []);
 
   // The window of clarity: it follows the pointer smoothly, fades in with the first move and out when the
   // pointer leaves the page. Only two CSS variables per frame, on the two sharp layers' masks.
   useEffect(() => {
-    if (!clarity || stage !== 'home') return;
+    if (!clarity) return;
     const far = layersRef.current.find((l) => l.name === 'far')!;
     const at = { x: 0, y: 0, a: 0 };
     const to = { x: 0, y: 0, a: 0 };
@@ -431,13 +385,18 @@ export default function ChaiSite() {
       window.removeEventListener('scroll', kick);
       cancelAnimationFrame(raf);
     };
-  }, [stage, clarity]);
+  }, [clarity]);
 
   // The header takes a soft cream behind it once the page is off the hero's sky (the shop, over the blend's
   // light, has it from the start), and the dark of the ink on Our Story.
   const [scrolled, setScrolled] = useState(false);
   const header = useRef({ scrolled: false });
   const heroH = useRef(0);
+  const headerH = useRef(64);
+  /** Our Story's start, under the homepage. */
+  const endEl = useRef<HTMLElement | null>(null);
+  /** The next change of page comes from the scroll itself (the homepage into Our Story): nothing to do for it. */
+  const quiet = useRef(false);
   const current: NavSection = page === 'shop' ? 'chai-tea' : page === 'about' ? 'chai-about' : 'chai-top';
 
   /**
@@ -452,10 +411,20 @@ export default function ChaiSite() {
     if (isScrolled !== header.current.scrolled) setScrolled((header.current.scrolled = isScrolled));
     // Once the picture is off the screen its drifts stop.
     const el = journeyEl.current;
-    const away = pg === 'home' && top > heroH.current;
+    const away = pg !== 'shop' && top > heroH.current;
     if (el && (el.dataset.away === '') !== away) {
       if (away) el.dataset.away = '';
       else delete el.dataset.away;
+    }
+    // The homepage runs on into Our Story (CM-021): once its ink reaches the header, the page is Our Story (its
+    // address, the header's colours, the link lit), and back again above it. Only an address changes.
+    const end = endEl.current;
+    if (pg !== 'shop' && end) {
+      const want: ChaiPage = end.getBoundingClientRect().top <= headerH.current ? 'about' : 'home';
+      if (want !== pg) {
+        quiet.current = true;
+        settle(want);
+      }
     }
   };
   useEffect(() => {
@@ -469,6 +438,9 @@ export default function ChaiSite() {
     };
     const relayout = () => {
       heroH.current = heroEl.current?.offsetHeight ?? window.innerHeight;
+      const root = rootEl.current;
+      endEl.current = root?.querySelector<HTMLElement>('#chai-end') ?? null;
+      headerH.current = root?.querySelector<HTMLElement>('.chai-header')?.offsetHeight ?? 64;
       onScroll();
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -483,7 +455,7 @@ export default function ChaiSite() {
 
   /**
    * From the hero to the shop (CM-010, CM-014): `p` (0 at the hero, 1 with the shop in place) takes the hero's
-   * words out and the blend's light across; the camera moves in by it, and the tea thickens with it. Written to
+   * words out and the blend's light across; the camera moves in by it. Written to
    * the moving parts only, and only when it changes (CM-011).
    */
   const lastShop = useRef(-1);
@@ -630,20 +602,28 @@ export default function ChaiSite() {
   useLayoutEffect(() => {
     const prev = prevPage.current;
     prevPage.current = page;
+    if (quiet.current) {
+      quiet.current = false;
+      return;
+    }
     const root = rootEl.current;
     const moved = prev !== null && prev !== page;
+    // Our Story by its address (a link, Back, the shop's menu): the homepage, already scrolled down to it.
+    const arrived = prev === null && page === 'about';
     if (moved) window.scrollTo({ top: 0, behavior: 'instant' });
     const glide =
       moved &&
       !faded.current &&
-      stage === 'home' &&
       ((prev === 'home' && page === 'shop') || (prev === 'shop' && page === 'home'));
     faded.current = false;
     shopTo(page === 'shop' ? 1 : 0, glide);
-    if (!moved || !root) return;
+    if ((!moved && !arrived) || !root) return;
     const part = pendingPart.current ? root.querySelector<HTMLElement>(`#${pendingPart.current}`) : null;
     pendingPart.current = null;
     if (part) part.scrollIntoView({ block: 'start' });
+    else if (page === 'about')
+      root.querySelector<HTMLElement>('#chai-end')?.scrollIntoView({ block: 'start' });
+    if (arrived) return;
     const target =
       part ??
       (page === 'shop'
@@ -663,20 +643,29 @@ export default function ChaiSite() {
 
   // A resize re-places the layers at rest.
   useEffect(() => {
-    if (stage !== 'home') return;
     const onResize = () => place({ x: 0, y: 0, z: 0 });
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [stage]);
+  }, []);
 
   // Once at rest, quietly fetch the other time of day so a switch never waits.
   useEffect(() => {
-    if (stage !== 'home' || bothTimes) return;
+    if (bothTimes) return;
+    // Not before the opening picture is in: it has the connection to itself first.
+    const imgs = [...(stageEl.current?.querySelectorAll<HTMLImageElement>('img[data-first]') ?? [])];
+    const first = Promise.all(imgs.map((im) => im.decode().catch(() => {})));
     const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 600));
-    const id = idle(() => setBothTimes(true));
-    return () => (window.cancelIdleCallback ?? window.clearTimeout)(id);
-  }, [stage, bothTimes]);
+    let id = 0;
+    let live = true;
+    void Promise.race([first, new Promise((r) => setTimeout(r, PICTURE_WAIT_MS))]).then(() => {
+      if (live) id = idle(() => setBothTimes(true));
+    });
+    return () => {
+      live = false;
+      (window.cancelIdleCallback ?? window.clearTimeout)(id);
+    };
+  }, [bothTimes]);
 
   /** Both times of day decoded (or 1.5 s gone: whatever has arrived shows, the rest fades in as it lands). */
   const whenReady = (go: () => void) => {
@@ -700,7 +689,7 @@ export default function ChaiSite() {
    * it from wherever it is (a change of mind mid-way turns it round, smoothly).
    */
   const choose = (next: BlendId) => {
-    if (next === wanted.current || stage !== 'home') return;
+    if (next === wanted.current) return;
     const calm = qualityStore.getState().reducedMotion;
     wanted.current = next;
     setBlend(next);
@@ -756,15 +745,18 @@ export default function ChaiSite() {
       else toTop();
       return;
     }
+    // The homepage and Our Story are one scroll (CM-021): a glide down to it, or back up to the top.
+    if (pageRef.current !== 'shop' && to !== 'shop') {
+      if (to === 'about') toPart(part ?? 'chai-about');
+      else toTop();
+      return;
+    }
     pendingPart.current = part ?? null;
     const go = () => navigate(to);
     const atHero = window.scrollY < window.innerHeight * 0.3;
     const glides = atHero && (to === 'shop' || to === 'home') && pageRef.current !== 'about';
     const fade =
-      !glides &&
-      stage === 'home' &&
-      typeof document.startViewTransition === 'function' &&
-      !qualityStore.getState().reducedMotion;
+      !glides && typeof document.startViewTransition === 'function' && !qualityStore.getState().reducedMotion;
     if (!fade) return go();
     faded.current = true;
     const html = document.documentElement;
@@ -785,7 +777,9 @@ export default function ChaiSite() {
   const time = timeOf(blend);
   useHead(page === 'about' ? INK : time === 'dusk' ? SKY_DUSK : SKY_DAY);
   const b = copy.blends[shown];
-  const first = (t: 'day' | 'dusk') => (t === timeOf(initialBlendRef.current) ? { 'data-first': '' } : {});
+  // The opening images are fetched before anything else on the page.
+  const first = (t: 'day' | 'dusk') =>
+    t === timeOf(initialBlendRef.current) ? { 'data-first': '', fetchPriority: 'high' as const } : {};
   /**
    * An earlier and a later image of a plate; the other time's only gets its source once it is wanted. `soft`:
    * the air's softened plate (the base under the window of clarity); `clear`: the sharp plate seen through
@@ -834,12 +828,11 @@ export default function ChaiSite() {
       className="chai"
       lang={lang}
       dir={LOCALES[lang].dir}
-      data-stage={stage}
+      data-stage="home"
       data-page={page}
       data-end={page === 'about' || undefined}
       data-scrolled={scrolled || undefined}
       data-testid="chai-site"
-      style={{ '--chai-veil': CLOUD_VEIL } as CSSProperties}
     >
       <ChaiNav lang={lang} current={current} onGo={goTo} />
 
@@ -904,7 +897,9 @@ export default function ChaiSite() {
                             data-time={timeOf(id)}
                             onLoad={() => packState(id, true)}
                             onError={() => packState(id, false)}
-                            {...(id === initialBlendRef.current ? { 'data-first': '' } : {})}
+                            {...(id === initialBlendRef.current
+                              ? { 'data-first': '', fetchPriority: 'high' as const }
+                              : {})}
                           />
                         </span>
                       ))}
@@ -1024,8 +1019,6 @@ export default function ChaiSite() {
 
       {/* Our Story, Connect and the footer, on the pack's ink (CM-011): its own page (CM-014). */}
       <About lang={lang} onTop={toTop} />
-
-      <div ref={mist} className="chai-veil" aria-hidden="true" />
     </div>
   );
 }

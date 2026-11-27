@@ -1,5 +1,25 @@
 # Decisions
 
+## CM-021 · 2026-11-27 · ready at once, and the homepage runs on into Our Story
+
+The owner: the site took two or three seconds before it could be used — things coming together slowly — and
+they want it all set up the moment it opens; and scrolling to the end of the homepage should take you on into
+Our Story, without pressing anything. Smoothness above all.
+
+- **No opening any more.** The cloud, the mist clearing and the camera's glide (CM-004, CM-006) are gone: the
+  page is drawn at rest from its first frame — header, words, the blend switch and Shop now there and in use at
+  once. The picture's first images are fetched before anything else and fade in (0.45 s) the moment they are
+  decoded; when they already are (a return visit) they are simply there. The other time of day is fetched only
+  after the opening picture is in. (`entrance.ts` and the arrival's pose are removed.)
+- **One scroll from the homepage into Our Story.** Our Story, Connect and the footer now sit under the teas.
+  The teas' gold steeps into Our Story's ink through the colour of tea, so one runs on into the other. As the
+  ink reaches the header the page becomes Our Story — its address (`/about`, replacing the current one: no new
+  history entry), the header's light colours, the About link lit — and back to the homepage above it. Only an
+  address changes: nothing moves, nothing is redrawn but the header.
+- **The links follow:** About (and the teas' "Our Story") glide down to it; Home from there glides back up;
+  Connect goes to its part. `/about` by its address opens the homepage already scrolled to Our Story. The shop
+  stays a screen of its own.
+
 ## CM-020 · 2026-11-25 · no falling tea, a clean sky behind the pack, and Mama winks when you order
 
 The owner, from an iPhone: thin lines showed in the sky behind the pack in the shop (more of them after a

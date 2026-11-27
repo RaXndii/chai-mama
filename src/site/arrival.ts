@@ -175,9 +175,6 @@ const FOCAL = FRAME.h / 2 / Math.tan(((FOV / 2) * Math.PI) / 180);
  *  a phone sees the pack whole, the rock under it and a little of the hills either side. */
 const MIN_VISIBLE = 0.3;
 
-/** Where the camera starts its glide, relative to the hero pose: a little right, higher and further back. */
-export const START = { x: 0.03, y: -0.16, z: -0.7 } as const;
-
 export interface Pose {
   x: number;
   y: number;
@@ -233,17 +230,6 @@ export function layerPlacement(
 export function layerTransform(layer: Layer, pose: Pose, vw: number, vh: number): string {
   const { x, y, s } = layerPlacement(layer, pose, vw, vh);
   return `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${s.toFixed(5)})`;
-}
-
-/** The glide: from START to rest, quick at first, settling slowly (ease-out). `calm` is a shorter move. */
-export function arrivalPose(p: number, calm: boolean, out: Pose = { x: 0, y: 0, z: 0 }): Pose {
-  const q = Math.min(1, Math.max(0, p));
-  const e = 1 - Math.pow(1 - q, 3.2);
-  const amp = (calm ? 0.4 : 1) * (1 - e);
-  out.x = START.x * amp;
-  out.y = START.y * amp;
-  out.z = START.z * amp;
-  return out;
 }
 
 /** Which image set suits this screen (device pixels across the frame); a sharp phone held upright gets the

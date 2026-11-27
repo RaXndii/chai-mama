@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  arrivalPose,
   frameCentre,
   frameScale,
   FRAME,
@@ -12,7 +11,6 @@ import {
   NARROW,
   pickSize,
   SKY,
-  START,
 } from './arrival';
 
 const parse = (t: string) => {
@@ -20,6 +18,8 @@ const parse = (t: string) => {
   return { x: Number(m[1]), y: Number(m[2]), s: Number(m[3]) };
 };
 const layer = (name: string) => LAYERS.find((l) => l.name === name)!;
+/** A pose a little right, higher and well back from rest (the camera's furthest from the picture). */
+const BACK = { x: 0.03, y: -0.16, z: -0.7 };
 
 describe('the photographic arrival (CM-001, CM-006, CM-008)', () => {
   it('at rest every layer is back in place: the stack is the picture, cover-fitted', () => {
@@ -35,11 +35,8 @@ describe('the photographic arrival (CM-001, CM-006, CM-008)', () => {
     }
   });
 
-  it('the glide starts back and up, ends exactly at rest, and the rock moves more than the country', () => {
-    expect(arrivalPose(0, false)).toEqual({ ...START });
-    const end = arrivalPose(1, false);
-    expect(Math.abs(end.x) + Math.abs(end.y) + Math.abs(end.z)).toBeLessThan(1e-9);
-    const pose = arrivalPose(0, false);
+  it('moving the camera, the rock moves more than the country', () => {
+    const pose = BACK;
     const at = (name: string) => parse(layerTransform(layer(name), pose, 1440, 900));
     expect(at('ledge').s).toBeLessThan(at('far').s);
     // The sky is the far country's own plane, and the pack and the leaves ride on their rock: nothing slides
@@ -50,8 +47,6 @@ describe('the photographic arrival (CM-001, CM-006, CM-008)', () => {
       const offset = (n: string) => at(n).x - layer(n).x * at(n).s;
       expect(offset(name)).toBeCloseTo(offset('ledge'), 1);
     }
-    // A calm arrival moves less.
-    expect(Math.abs(arrivalPose(0, true).z)).toBeLessThan(Math.abs(START.z));
   });
 
   it('wide screens see the whole picture across; 16:10 keeps the pack and the sun; phones centre the pack', () => {
@@ -98,10 +93,9 @@ describe('a phone held upright gets the band of the picture around the pack (CM-
     [600, 968],
   ];
   const POSES = [
-    arrivalPose(0, false),
-    arrivalPose(0, true),
-    arrivalPose(0.5, false),
     { x: 0, y: 0, z: 0 },
+    // The pointer's sway.
+    { x: 0.025, y: 0.015, z: 0 },
     // The shop's move toward the rock.
     { x: 0, y: 0, z: 0.24 },
   ];

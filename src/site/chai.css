@@ -38,15 +38,6 @@
   transition: opacity 0.42s var(--ease);
 }
 
-/* In the opening cloud and during the arrival nothing scrolls; in the cloud nothing takes a click. */
-html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
-  overflow: hidden;
-}
-
-.chai[data-stage='cloud'] {
-  pointer-events: none;
-}
-
 .chai :focus-visible {
   outline: 2px solid var(--saffron);
   outline-offset: 3px;
@@ -65,6 +56,18 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  /* The page is in use at once (CM-021); the picture fades in as soon as it has arrived (ChaiSite.tsx), and is
+     simply there when it already had. */
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+
+.chai-stage[data-ready] {
+  opacity: 1;
+}
+
+.chai-stage[data-ready='now'] {
+  transition: none;
 }
 
 .chai-layer {
@@ -357,18 +360,6 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   to {
     translate: 6% -2%;
   }
-}
-
-/* The mist the flight hands off in, and the arrival clears. */
-.chai-veil {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
-  background:
-    radial-gradient(70% 60% at 30% 35%, rgb(255 252 244 / 0.9), transparent 70%),
-    radial-gradient(60% 50% at 75% 70%, rgb(214 224 228 / 0.7), transparent 70%), var(--chai-veil);
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* ---------- Header (CM-008) ---------- */
@@ -1146,11 +1137,10 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   letter-spacing: -0.02em;
 }
 
-/* ---------- The pages (CM-014) ----------
-   The homepage (the hero and another flavour), the shop and Our Story are three pages of one site. Each shows
-   only its own parts; the picture is kept (hidden on Our Story), so going back to it is instant. */
-.chai:not([data-page='about']) .chai-end,
-.chai[data-page='about'] .chai-main {
+/* ---------- The pages (CM-014, CM-021) ----------
+   The homepage, the shop and Our Story are three pages of one site. The homepage scrolls straight on into Our
+   Story (one page under the other: the address follows the scroll); the shop is a screen of its own. */
+.chai[data-page='shop'] .chai-end {
   display: none;
 }
 
@@ -2470,9 +2460,13 @@ html:has(.chai:is([data-stage='cloud'], [data-stage='arriving'])) {
   position: relative;
   z-index: 2;
   overflow: hidden;
-  /* Its own page (CM-014): the ink from the top, at least a screen of it. */
+  /* Under the teas (CM-021), at least a screen of it: the teas' gold steeps into the ink over its first few rem,
+     through the colour of the tea itself, so one runs on into the other. */
   min-block-size: 100svh;
-  background: var(--ink-bg);
+  background:
+    linear-gradient(var(--sun-3), #b06a1c 2.5rem, #4a2a12 6rem, var(--ink-bg) 11rem) top / 100% 11rem
+      no-repeat,
+    var(--ink-bg);
   color: var(--ink-fg);
 }
 
