@@ -872,7 +872,7 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
     );
     await details.tap();
     await expect(details).toHaveAttribute('aria-expanded', 'false');
-    // Order now: the checkout comes up from the bottom as a sheet, the full width of the screen.
+    // Order now: the checkout grows out of the button into the whole screen.
     await shop(page).getByTestId('chai-order').tap();
     const sheet = page.getByTestId('chai-checkout').getByRole('dialog');
     await expect(sheet).toBeVisible();
@@ -882,5 +882,18 @@ test.describe('Chai Mama — the shop (CM-010)', () => {
         return [Math.round(b.x), Math.round(b.width), Math.round(b.y + b.height)];
       })
       .toEqual([0, vw, vh]);
+    // The whole screen (CM-022): with the keyboard up (what can be seen shrinks), the button stays in sight.
+    await page.setViewportSize({ width: vw, height: Math.round(vh * 0.55) });
+    const go = page.getByTestId('chai-checkout-go');
+    await expect
+      .poll(async () => {
+        const g = (await go.boundingBox())!;
+        return g.y + g.height <= Math.round(vh * 0.55);
+      })
+      .toBe(true);
+    await page.setViewportSize({ width: vw, height: vh });
+    // Closing, it goes back into the button.
+    await page.getByTestId('chai-checkout').getByRole('button', { name: 'Close' }).first().tap();
+    await expect(page.getByTestId('chai-checkout')).toBeHidden();
   });
 });

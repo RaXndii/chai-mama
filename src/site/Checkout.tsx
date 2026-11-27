@@ -30,6 +30,9 @@ import {
 import { primeChime } from './chime';
 import { formatCount, formatIqd, subtotal, unitPrice, type OptionId } from './order';
 
+/** How long the checkout takes to go (it shrinks back into its button, or fades). */
+const LEAVE_MS = 380;
+
 // The map (with Leaflet) is its own chunk, fetched only when the visitor opens it.
 const MapPicker = lazy(() => import('./MapPicker'));
 
@@ -40,6 +43,8 @@ interface Props {
   qty: number;
   /** Where to put the checkout in the page (the site's root, outside anything that moves). */
   host: HTMLElement;
+  /** The button it opens from: on a phone the checkout grows out of it, and goes back into it. */
+  from?: HTMLElement | null;
   onClose: () => void;
 }
 
@@ -54,9 +59,10 @@ type Field = 'name' | 'phone' | 'email' | 'location';
  * It asks what the owner's own shop asks: a full name, a phone (Iraq first, the Middle East, then Europe), an
  * email if they like, where to deliver it — pinned on a map, or typed where the map cannot load — and notes.
  */
-export default function Checkout({ lang, blend, option, qty, host, onClose }: Props) {
+export default function Checkout({ lang, blend, option, qty, host, from, onClose }: Props) {
   const c = copy.checkout;
   const uid = useId().replace(/:/g, '');
+  const root = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const first = useRef<HTMLInputElement>(null);
   const packImg = useRef<HTMLImageElement>(null);
@@ -74,21 +80,65 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
   const [error, setError] = useState<{ field: Field | 'form'; text: string } | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [squish, setSquish] = useState(0);
+  const [leaving, setLeaving] = useState(false);
   const d = dialOf(dial);
   const total = subtotal(option, qty);
   const rtl = LOCALES[lang].dir === 'rtl';
 
-  // Opened: the first field takes the focus; Escape closes (the map, when it is open, closes first).
+  /** Close: on a phone it shrinks back into the button it came from, on a wider screen the pane fades. */
+  const close = () => {
+    if (leaving) return;
+    if (qualityStore.getState().reducedMotion) return onClose();
+    setLeaving(true);
+    window.setTimeout(onClose, LEAVE_MS);
+  };
+  const closeRef = useRef(close);
+  closeRef.current = close;
+
+  // On a phone it grows out of the button pressed (CM-022): the circle opens from there.
+  useLayoutEffect(() => {
+    const r = root.current;
+    const b = from?.getBoundingClientRect();
+    if (!r || !b) return;
+    const box = r.getBoundingClientRect();
+    r.style.setProperty('--ox', `${Math.round(b.left + b.width / 2 - box.left)}px`);
+    r.style.setProperty('--oy', `${Math.round(b.top + b.height / 2 - box.top)}px`);
+  }, [from]);
+
+  // The checkout fills what can be seen of the screen — above the keyboard once it is up — so the field being
+  // filled and the button under it are never behind it (a phone's keyboard covers the page, it does not move it).
   useEffect(() => {
-    first.current?.focus({ preventScroll: true });
+    const vv = window.visualViewport;
+    const r = root.current;
+    if (!vv || !r) return;
+    const fit = () => {
+      r.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+      r.style.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`);
+    };
+    fit();
+    vv.addEventListener('resize', fit);
+    vv.addEventListener('scroll', fit);
+    return () => {
+      vv.removeEventListener('resize', fit);
+      vv.removeEventListener('scroll', fit);
+    };
+  }, []);
+
+  // Opened: with a keyboard and mouse the first field takes the focus (on a touch screen the visitor taps it:
+  // a keyboard springing up mid-animation would only push it about). Escape closes (the map first, when open).
+  useEffect(() => {
+    if (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches)
+      first.current?.focus({ preventScroll: true });
+  }, []);
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || mapOpen) return;
       e.preventDefault();
-      onClose();
+      closeRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, mapOpen]);
+  }, [mapOpen]);
 
   /** The light on the rim, toward the pointer. */
   const light = (e: PointerEvent<HTMLDivElement>) => {
@@ -168,8 +218,19 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
   const what = `${option === 'pouch' ? s.pouch : s.carton} × ${formatCount(qty, lang)}`;
 
   return createPortal(
-    <div className="chai-checkout" data-testid="chai-checkout">
-      <div className="chai-checkout__scrim" onClick={onClose} aria-hidden="true" />
+    <div
+      ref={root}
+      className="chai-checkout"
+      data-testid="chai-checkout"
+      data-leaving={leaving || undefined}
+      onFocus={(e) => {
+        // A field tapped as the keyboard comes up: kept in sight once the screen has made room for it.
+        const el = e.target as HTMLElement;
+        if (el.matches('input, textarea, select'))
+          window.setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300);
+      }}
+    >
+      <div className="chai-checkout__scrim" onClick={close} aria-hidden="true" />
       <div
         ref={panel}
         className="chai-checkout__panel"
@@ -199,12 +260,7 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
           <strong className="chai-checkout__total" data-testid="chai-checkout-total">
             {formatIqd(total, lang)}
           </strong>
-          <button
-            type="button"
-            className="chai-checkout__close"
-            onClick={onClose}
-            aria-label={copy.nav.close}
-          >
+          <button type="button" className="chai-checkout__close" onClick={close} aria-label={copy.nav.close}>
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -228,7 +284,7 @@ export default function Checkout({ lang, blend, option, qty, host, onClose }: Pr
                 <dd>{where()?.label}</dd>
               </div>
             </dl>
-            <button type="button" className="chai-checkout__ghost" onClick={onClose}>
+            <button type="button" className="chai-checkout__ghost" onClick={close}>
               {c.done.close}
             </button>
           </div>

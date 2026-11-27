@@ -355,6 +355,7 @@ export default function Shop({ lang, blend, onChoose, onBlendKey, onOption, onCh
           option={option}
           qty={qty}
           host={document.querySelector<HTMLElement>('.chai') ?? document.body}
+          from={orderBtn.current}
           onClose={() => openCheckout(false)}
         />
       )}

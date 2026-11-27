@@ -1,5 +1,20 @@
 # Decisions
 
+## CM-022 · 2026-11-27 · the checkout is the whole screen on a phone
+
+The owner, from an iPhone in Kurdish: after Order now the questions came up as a sheet, and with the keyboard up
+there was scrolling to do to reach them. They want the whole screen, with a good animation.
+
+- **The whole screen, grown out of the button.** A circle of the blend's cream opens from the Order now button
+  over the shop (0.6 s), and the order, the steps and the first questions rise into it one after another;
+  closing, it shrinks back into the button. (A wider screen keeps its pane, which now fades as it goes.)
+- **Above the keyboard.** The checkout fills what can be seen of the screen — the part above the keyboard once
+  it is up (the browser's visual viewport) — so the button stays at the bottom of what is seen and the questions
+  scroll between it and the order at the top; a field tapped is kept in sight.
+- **No keyboard springing up by itself** on a touch screen: the visitor taps the first field (with a keyboard
+  and mouse it still takes the focus at once).
+- Under reduced motion it is simply there, and simply gone.
+
 ## CM-021 · 2026-11-27 · ready at once, and the homepage runs on into Our Story
 
 The owner: the site took two or three seconds before it could be used — things coming together slowly — and
